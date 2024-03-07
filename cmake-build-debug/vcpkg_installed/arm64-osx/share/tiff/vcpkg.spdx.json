@@ -1,0 +1,140 @@
+{
+  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "documentNamespace": "https://spdx.org/spdxdocs/tiff-arm64-osx-4.6.0#1-cdf9bb6a-6f97-4830-acca-279a0167ff18",
+  "name": "tiff:arm64-osx@4.6.0#1 73eae85284f4b602ddab18e19760393d0206bd2c756012e832606ddfbd7ef89f",
+  "creationInfo": {
+    "creators": [
+      "Tool: vcpkg-4c1df40a3c5c5e18de299a99e9accb03c2a82e1e"
+    ],
+    "created": "2024-03-07T22:08:00Z"
+  },
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "GENERATES",
+      "relatedSpdxElement": "SPDXRef-binary"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-1"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-3"
+    },
+    {
+      "spdxElementId": "SPDXRef-binary",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-0",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-1",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-2",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-3",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    }
+  ],
+  "packages": [
+    {
+      "name": "tiff",
+      "SPDXID": "SPDXRef-port",
+      "versionInfo": "4.6.0#1",
+      "downloadLocation": "git+https://github.com/Microsoft/vcpkg@1c0fc716f916833234f0fb5e7061d52e9063e7c6",
+      "homepage": "https://libtiff.gitlab.io/libtiff/",
+      "licenseConcluded": "libtiff",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "description": "A library that supports the manipulation of TIFF image files",
+      "comment": "This is the port (recipe) consumed by vcpkg."
+    },
+    {
+      "name": "tiff:arm64-osx",
+      "SPDXID": "SPDXRef-binary",
+      "versionInfo": "73eae85284f4b602ddab18e19760393d0206bd2c756012e832606ddfbd7ef89f",
+      "downloadLocation": "NONE",
+      "licenseConcluded": "libtiff",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "This is a binary package built by vcpkg."
+    }
+  ],
+  "files": [
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/tiff/1c0fc716f916833234f0fb5e7061d52e9063e7c6/FindCMath.patch",
+      "SPDXID": "SPDXRef-file-0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c7271917f2b3165398ed579ac451c9fc05ddbd4f7854ea3997f731d61aa512c4"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/tiff/1c0fc716f916833234f0fb5e7061d52e9063e7c6/portfile.cmake",
+      "SPDXID": "SPDXRef-file-1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "33589c65d8c0f0ec9c64f4b833f0b9ceda66da1dcf8d09ec4562ab32ea2a3533"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/tiff/1c0fc716f916833234f0fb5e7061d52e9063e7c6/vcpkg.json",
+      "SPDXID": "SPDXRef-file-2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "82bc8cc01002d0e573aac3923df94fcfbd9212fccd4a855b0cc90fcc6fb1d726"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/tiff/1c0fc716f916833234f0fb5e7061d52e9063e7c6/vcpkg-cmake-wrapper.cmake.in",
+      "SPDXID": "SPDXRef-file-3",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4affcf46005c51aba5d63882b05e86a91344595e5b870a65a0579a72d8e27bb8"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    }
+  ]
+}

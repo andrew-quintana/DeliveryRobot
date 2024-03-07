@@ -1,0 +1,25 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/ninja -DCMAKE_TOOLCHAIN_FILE=/Users/aq_home/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake -G Ninja -S /Users/aq_home/Downloads/JetbotParking -B /Users/aq_home/Downloads/JetbotParking/cmake-build-debug
+-- Running vcpkg install
+Detecting compiler hash for triplet arm64-osx...
+All requested packages are currently installed.
+Total install time: 334 ns
+The package gtest is compatible with built-in CMake targets:
+
+    enable_testing()
+    
+    find_package(GTest CONFIG REQUIRED)
+    target_link_libraries(main PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+    
+    add_test(AllTestsInMain main)
+
+The package opencv2 is compatible with CMake if you set the OpenCV_DIR *before* the find_package call
+
+    set(OpenCV_DIR "${VCPKG_INSTALLED_DIR}/arm64-osx/share/opencv2")
+    find_package(OpenCV REQUIRED)
+
+-- Running vcpkg install - done
+CMake Error at CMakeLists.txt:8 (vcpkg_cmake_configure):
+  Unknown CMake command "vcpkg_cmake_configure".
+
+
+-- Configuring incomplete, errors occurred!

@@ -1,0 +1,12 @@
+{
+  "name" : "jetbotparking",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "bb588985e37484d543fc849d0d79434e0d45bb3c",
+  "dependencies" : [ {
+    "name" : "opencv2",
+    "version>=" : "2.4.13.7#19"
+  }, {
+    "name" : "gtest",
+    "version>=" : "1.14.0"
+  } ]
+}

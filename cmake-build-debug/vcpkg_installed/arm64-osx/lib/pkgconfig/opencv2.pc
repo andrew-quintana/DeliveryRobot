@@ -1,0 +1,14 @@
+prefix=${pcfiledir}/../..
+# Package Information for pkg-config
+
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir_old=${prefix}/include/opencv2.4/opencv
+includedir_new=${prefix}/include/opencv2.4
+
+Name: OpenCV
+Description: Open Source Computer Vision Library
+Version: 2.4.13.7
+
+Libs: "-L${exec_prefix}/lib" -lopencv_contrib2 -lopencv_stitching2 -lopencv_nonfree2 -lopencv_superres2 -lopencv_ocl2 -lopencv_ts2 -lopencv_videostab2 -lopencv_gpu2 -lopencv_legacy2 -lopencv_ml2 -lopencv_objdetect2 -lopencv_calib3d2 -lopencv_photo2 -lopencv_video2 -lopencv_features2d2 -lopencv_flann2 -lopencv_highgui2 -lopencv_imgproc2 -lopencv_core2 -l-framework OpenCL -lextra_component-NOTFOUND -l-framework QuartzCore -l-framework CoreVideo -l-framework CoreMedia -l-framework CoreGraphics -l-framework AVFoundation -l-framework Accelerate -l-framework Cocoa -lstdc++
+Cflags: "-I${includedir_old}" "-I${includedir_new}"

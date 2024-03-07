@@ -1,0 +1,330 @@
+{
+  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "documentNamespace": "https://spdx.org/spdxdocs/opencv2-arm64-osx-2.4.13.7#19-b095c4e1-d533-4475-aeee-f6ce13c1b77b",
+  "name": "opencv2:arm64-osx@2.4.13.7#19 59bb924d46e710691fe244b319502d2aedf01dd639f9e6bd7a659d904f7a81b7",
+  "creationInfo": {
+    "creators": [
+      "Tool: vcpkg-4c1df40a3c5c5e18de299a99e9accb03c2a82e1e"
+    ],
+    "created": "2024-03-07T22:26:57Z"
+  },
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "GENERATES",
+      "relatedSpdxElement": "SPDXRef-binary"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-1"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-3"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-4"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-5"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-6"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-7"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-8"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-9"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-10"
+    },
+    {
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-file-11"
+    },
+    {
+      "spdxElementId": "SPDXRef-binary",
+      "relationshipType": "GENERATED_FROM",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-0",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-1",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-2",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-3",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-4",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-5",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-6",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-7",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-8",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-9",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-10",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    },
+    {
+      "spdxElementId": "SPDXRef-file-11",
+      "relationshipType": "CONTAINED_BY",
+      "relatedSpdxElement": "SPDXRef-port"
+    }
+  ],
+  "packages": [
+    {
+      "name": "opencv2",
+      "SPDXID": "SPDXRef-port",
+      "versionInfo": "2.4.13.7#19",
+      "downloadLocation": "git+https://github.com/Microsoft/vcpkg@7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603",
+      "homepage": "https://github.com/opencv/opencv",
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "description": "Open Source Computer Vision Library",
+      "comment": "This is the port (recipe) consumed by vcpkg."
+    },
+    {
+      "name": "opencv2:arm64-osx",
+      "SPDXID": "SPDXRef-binary",
+      "versionInfo": "59bb924d46e710691fe244b319502d2aedf01dd639f9e6bd7a659d904f7a81b7",
+      "downloadLocation": "NONE",
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "comment": "This is a binary package built by vcpkg."
+    },
+    {
+      "SPDXID": "SPDXRef-resource-1",
+      "name": "opencv/opencv",
+      "downloadLocation": "git+https://github.com/opencv/opencv@${OPENCV_VERSION}",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "de7d24ac7ed78ac14673011cbecc477cae688b74222a972e553c95a557b5cb8e5913f97db525421d6a72af30998ca300112fa0b285daed65f65832eb2cf7241a"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0004-add-ffmpeg-missing-defines.patch",
+      "SPDXID": "SPDXRef-file-0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d2d79e34a228b13522b748c4741da46508d7d0cf9c59ebd9f8c03b1638c13cab"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0002-fix-paths-containing-symbols.patch",
+      "SPDXID": "SPDXRef-file-1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0f6e2bf6a7b9a0226186c3de9b196644c70a565386f0c3d9e10565354fa7cb68"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/portfile.cmake",
+      "SPDXID": "SPDXRef-file-2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0db2deafe35b588e162db687be839352c844a41831760b22fc168537de142bd1"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0006-fix-jasper.patch",
+      "SPDXID": "SPDXRef-file-3",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dc9c81aba3518f2b3cc2b49c1f32ce5226b6d9e542ac55b294a1c32c05aa2bc6"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0019-fix-openexr.patch",
+      "SPDXID": "SPDXRef-file-4",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "93894e8b69a216cd6e4d1b82b08a362748e7059da9d48bb920ff4d5f198aba9c"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0003-force-package-requirements.patch",
+      "SPDXID": "SPDXRef-file-5",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0d96f72da23fef3a71636295a1cb43b1bb8d6848a8497a4df841ce312d4bcdac"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/vcpkg.json",
+      "SPDXID": "SPDXRef-file-6",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2b6d4fde7e010fbf676806d79d3c9c84589a5cae10621dbf1026ac952f7b21c9"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0020-missing-include.patch",
+      "SPDXID": "SPDXRef-file-7",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "60be840733f2034c58abbf50c515238068237ada72d9084673d5041ed25dc69e"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0007-fix-config.patch",
+      "SPDXID": "SPDXRef-file-8",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4e4bde2abf452d0a5905faa968079cd3ca9337433d9e132d7a84295a7ceefe09"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/usage.in",
+      "SPDXID": "SPDXRef-file-9",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "05a8e7ee50151a3b7c322a10fa64c02760705b77456fc4f7a54a78bdb9912987"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0001-install-options.patch",
+      "SPDXID": "SPDXRef-file-10",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c23e6bb249a676264e3f03ea9c87fb64faab54c2146035646c106992ec64ad25"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": ".//Users/aq_home/.vcpkg-clion/vcpkg/buildtrees/versioning_/versions/opencv2/7a4e55d470b2cff8fddb4f6f44ab15b4b5c0f603/0005-fix-cuda.patch",
+      "SPDXID": "SPDXRef-file-11",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e4e5ad94f4c92c92572860df20b4dce629cdb5eeca8d1d6c067c2df8fbbc843f"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    }
+  ]
+}

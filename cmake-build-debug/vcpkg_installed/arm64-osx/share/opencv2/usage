@@ -1,0 +1,4 @@
+The package opencv2 is compatible with CMake if you set the OpenCV_DIR *before* the find_package call
+
+    set(OpenCV_DIR "${VCPKG_INSTALLED_DIR}/arm64-osx/share/opencv2")
+    find_package(OpenCV REQUIRED)
