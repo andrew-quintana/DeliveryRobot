@@ -52,8 +52,9 @@ def calibrate_fisheye_checkerboard(DIR):
     frame_size = None
 
     # local image variables
-    objpoints = []
-    imgpoints = []
+    _image_shape = None
+    objpoints = [] # 3d point in real world space
+    imgpoints = [] # 2d points in image plane.
 
     # board information
     CHECKERBOARD = (6, 9)  # (rows, cols)
@@ -69,10 +70,15 @@ def calibrate_fisheye_checkerboard(DIR):
         # attept to import
         frame = cv2.imread(fname)
 
-        # error check
+        # error checks
         if frame is None:
             print(f"Warning 100: Invalid Filetype - Image file {i} wasn't able to be imported.")
             continue
+
+        if _image_shape == None:
+            _image_shape = frame.shape[:2]
+        else:
+            assert _image_shape == frame.shape[:2], "All images must share the same size."
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         image_size = gray.shape[:2]

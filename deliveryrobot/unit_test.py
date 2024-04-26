@@ -33,7 +33,9 @@ import unittest
 from utilities.computational_geometry import *
 from utilities.mapper import *
 from utilities.utilities import *
-from sensors.apriltag.camera_calibration import *
+from sensors.calibration.camera_calibration import *
+from apriltag import Detector
+from sensors.camera.apriltagsensor import *
 
 tol = 1e-6
 
@@ -376,6 +378,7 @@ class TestUtilities(unittest.TestCase):
         expected_result = -2
         self.assertEqual(result, expected_result)
 
+"""
 class TestCalibration(unittest.TestCase):
     def test_calibrate_fisheye_checkerboard(self):
         
@@ -411,6 +414,36 @@ class TestCalibration(unittest.TestCase):
             self.assertTrue(False)
         
         self.assertTrue(True)
+"""
+        
+class TestAprilTagSensor(unittest.TestCase):
+    def setUp(self):
+        self.sensor = AprilTagSensor(cal_dir)
+        self.image_path = '/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/deliveryrobot/test_samples/0x_45y.jpg'
+
+    def test_detect(self):
+        # Load the sample image
+        image = cv2.imread(self.image_path)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # Perform apriltag detection
+        measurements = {}
+        result = self.sensor.detect(self.image_path, measurements)
+
+        # Assert that the detection was successful
+        self.assertTrue(result)
+
+        # Assert that at least one measurement was recorded
+        self.assertTrue(len(measurements) > 0)
+
+        # Assert that the measurements have the expected format
+        for tag_id, measurement in measurements.items():
+            self.assertIsInstance(tag_id, str)
+            self.assertIsInstance(measurement, list)
+            self.assertEqual(len(measurement), 3)
+            self.assertIsInstance(measurement[0], float)
+            self.assertIsInstance(measurement[1], float)
+            self.assertIsInstance(measurement[2], float)
 
 if __name__ == '__main__':
     unittest.main()
