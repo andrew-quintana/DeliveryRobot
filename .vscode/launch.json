@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python",
+      "program": "/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/build/Debug/outDebug"
+    }
+  ]
+}
