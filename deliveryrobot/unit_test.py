@@ -36,8 +36,10 @@ from utilities.utilities import *
 from sensors.calibration.camera_calibration import *
 from apriltag import Detector
 from sensors.camera.apriltagsensor import *
+from navigation.slam.onlineslam import *
 
-tol = 1e-6
+err_tol = 1e-2
+rounding_tol = 1e-6
 
 class TestUtilities(unittest.TestCase):
     def test_approximately_equal(self):
@@ -82,7 +84,7 @@ class TestUtilities(unittest.TestCase):
         col_index = 1
         num_rows = 1
         num_cols = 1
-        result = insert_zeros(matrix, row_index, col_index, num_rows, num_cols)
+        result = insert_rows_cols(matrix, row_index, col_index, num_rows, num_cols)
         expected_result = np.array([[1, 0, 2], 
                                     [0, 0, 0], 
                                     [3, 0, 4]]).astype(float)
@@ -96,7 +98,7 @@ class TestUtilities(unittest.TestCase):
         col_index = 2
         num_rows = 2
         num_cols = 2
-        result = insert_zeros(matrix, row_index, col_index, num_rows, num_cols)
+        result = insert_rows_cols(matrix, row_index, col_index, num_rows, num_cols)
         expected_result = np.array([[0, 0, 0, 0, 0], 
                                     [0, 0, 0, 0, 0], 
                                     [1, 2, 0, 0, 3], 
@@ -249,7 +251,7 @@ class TestUtilities(unittest.TestCase):
                                     [ 2.06066017, -1.06066017, 0], 
                                     [ 2.06066017,  2.06066017, 0], 
                                     [-1.06066017,  2.06066017, 0]])
-        self.assertTrue(np.all(np.isclose(result, expected_result, tol)))
+        self.assertTrue(np.all(np.isclose(result, expected_result, rounding_tol)))
 
     def test_left(self):
         # Test case 1: Test left function
@@ -359,7 +361,7 @@ class TestUtilities(unittest.TestCase):
         c = np.array([1, 0])
         result = visibility_point(robot_radius_m, fos, a, b, c)
         expected_result = np.array([-1.06066017, -1.06066017, 0],dtype=np.float64)
-        self.assertTrue(np.all(np.isclose(result, expected_result, tol)))
+        self.assertTrue(np.all(np.isclose(result, expected_result, rounding_tol)))
 
     def test_xprod(self):
         # Test case 1: Test xprod function
@@ -444,6 +446,146 @@ class TestAprilTagSensor(unittest.TestCase):
             self.assertIsInstance(measurement[0], float)
             self.assertIsInstance(measurement[1], float)
             self.assertIsInstance(measurement[2], float)
+
+class TestOnlineSLAM(unittest.TestCase):
+
+    def setUp( self ):
+
+        # create measurements for consideration
+        self.measurements: StateDict = {}
+        self.measurements["1"] = np.array([60., 70., 1.])
+        self.measurements["2"] = np.array([-50., 30., -2.])
+        self.measurements["3"] = np.array([-100., 20., -4])
+        self.measurements["8"] = np.array([20., 100., -3.])
+
+        self.slam = OnlineSLAM( len(self.measurements["1"]) )
+
+    def test_process_measurements( self ):
+        # solution
+        sol_Omega = np.array([[ 5.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0],
+               [ 0.0,  5.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0],
+               [ 0.0,  0.0,  5.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0],
+               [-1.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0],
+               [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0]])
+        
+        sol_Xi = np.array([ [70],
+                            [-220],
+                            [8],
+                            [60],
+                            [70],
+                            [1],
+                            [-50],
+                            [30],
+                            [-2],
+                            [-100],
+                            [20],
+                            [-4],
+                            [20],
+                            [100],
+                            [-3]    ])
+        
+        # execute and check for completion
+        self.assertTrue(self.slam.process_measurements(self.measurements))
+
+        # print differences if any
+        if not np.all(np.isclose(self.slam.Xi, sol_Xi, rounding_tol)):
+            if debug: print("MEAUSUREMENT FAILURE AT THE FOLLOWING:\t")
+            compare_arrays(self.slam.Xi, sol_Xi)
+
+        if not np.all(np.isclose(self.slam.Omega, sol_Omega, rounding_tol)):
+            if debug: print("MEAUSUREMENT FAILURE AT THE FOLLOWING:\t")
+            compare_arrays(self.slam.Omega, sol_Omega)
+        
+        # evaluate results
+        self.assertTrue(np.all(np.isclose(self.slam.Xi, sol_Xi, rounding_tol)))
+        self.assertTrue(np.all(np.isclose(self.slam.Omega, sol_Omega, rounding_tol)))
+
+    
+    def test_process_movement( self ):
+
+        # solution
+        sol_Omega = np.array([[ 6.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0],
+               [ 0.0,  6.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0],
+               [ 0.0,  0.0,  6.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0,  0.0,  0.0, -1.0],
+               [-1.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0],
+               [-1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0],
+               [ 0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0],
+               [ 0.0,  0.0, -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  1.0]])
+        sol_Xi = np.array([[  74.01232993],
+                [-222.98348932],
+                [  -0.78539816],
+                [  -4.01232993],
+                [   2.98348932],
+                [   8.78539816],
+                [  60.        ],
+                [  70.        ],
+                [   1.        ],
+                [ -50.        ],
+                [  30.        ],
+                [  -2.        ],
+                [-100.        ],
+                [  20.        ],
+                [  -4.        ],
+                [  20.        ],
+                [ 100.        ],
+                [  -3.        ]])
+
+        # execute and check for completion
+        self.slam.process_measurements(self.measurements)
+        self.assertTrue(self.slam.process_movement( 5, np.pi/4 ))
+
+        # print differences if any
+        if not np.all(np.isclose(self.slam.Xi, sol_Xi, rounding_tol)):
+            if debug: print("MEAUSUREMENT FAILURE AT THE FOLLOWING:\t")
+            compare_arrays(self.slam.Xi, sol_Xi)
+
+        if not np.all(np.isclose(self.slam.Omega, sol_Omega, rounding_tol)):
+            if debug: print("MEAUSUREMENT FAILURE AT THE FOLLOWING:\t")
+            compare_arrays(self.slam.Omega, sol_Omega)
+        
+        # evaluate results
+        self.assertTrue(np.all(np.isclose(self.slam.Xi, sol_Xi, rounding_tol)))
+        self.assertTrue(np.all(np.isclose(self.slam.Omega, sol_Omega, rounding_tol)))
+
+    def test_map_update( self ):
+
+        # solution
+        sol_map = {'ROBOT': np.array([-4.01232993,  2.98348932,  8.78539816]), 
+                   '1': np.array([60., 70.,  1.]), 
+                   '2': np.array([-50.,  30.,  -2.]), 
+                   '3': np.array([-100.,   20.,   -4.]), 
+                   '8': np.array([ 20., 100.,  -3.])}
+
+        # execute and check for completion
+        self.slam.process_measurements(self.measurements)
+        self.slam.process_movement( 5, np.pi/4 )
+        self.assertTrue(self.slam.map_update())
+
+        # evaluate results
+        for key in self.slam.map:
+            if verbose: print(f"test_map_update: key {key}")
+            self.assertTrue(np.all(np.isclose(self.slam.map[key], sol_map[key], rounding_tol)))
 
 if __name__ == '__main__':
     unittest.main()

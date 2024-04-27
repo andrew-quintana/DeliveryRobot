@@ -74,7 +74,7 @@ class AprilTagSensor( Component ):
         if verbose: print("FOUND", len(detections), "DETECTIONS")
 
         for i, detection in enumerate(detections):
-            cv2.imwrite("/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/deliveryrobot/test_samples/img_viz.jpg", annotate(im, detection))
+            
             if verbose: print("detection", i, ": id", detection.tag_id, "hamming", detection.hamming, "margin", detection.decision_margin)
 
             # Check if invalid AprilTag detected
@@ -94,9 +94,9 @@ class AprilTagSensor( Component ):
             # prepare camera params for detector
             fx = self.camera_matrix[0, 0]
             fy = self.camera_matrix[1, 1]
-            cx = self.frame_size[0] / 2
-            cy = self.frame_size[1] / 2
-            camera_params = [-1.5926459934911697e+03, -1.3325540650178916e+03, cx[0], cy[0]]
+            cx = gray.shape[0] / 2
+            cy = gray.shape[1] / 2
+            camera_params = [-1.5926459934911697e+03, -1.3325540650178916e+03, cx, cy]
 
             # Get pose
             pose, tag_size, err = self.detector.detection_pose(detection, camera_params, tag_size=0.015)
@@ -128,6 +128,8 @@ class AprilTagSensor( Component ):
             # Assign calculated and measured values
             measurements[str(detection.tag_id)] = [x, y, r_state[psi_idx]]
 
+            cv2.imwrite(f"/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/docs/images/perspective/tag{detection.tag_id}_live.jpg", annotate(im, detection, measurements[str(detection.tag_id)]))
+
         return True
     
 def rotation_conversion(rotation_matrix):
@@ -142,7 +144,7 @@ def rotation_conversion(rotation_matrix):
 
     return roll, pitch, yaw
 
-def annotate( image, detection ):
+def annotate( image, detection, state ):
     # extract the bounding box (x, y)-coordinates for the AprilTag
     # and convert each of the (x, y)-coordinate pairs to integers
     (ptA, ptB, ptC, ptD) = detection.corners
@@ -160,6 +162,8 @@ def annotate( image, detection ):
     cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
     # draw the tag family on the image
     tagFamily = detection.tag_family.decode("utf-8")
-    cv2.putText(image, f"{tagFamily}: {detection.tag_id}", (ptA[0], ptA[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    tag_string = f"{tagFamily}: {detection.tag_id}\n\
+                    X: {state[0]:2f} Y: {state[1]:2f} {get_psi_symbol()}: {state[2]:2f}"
+    cv2.putText(image, tag_string, (ptA[0], ptA[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         
     return image

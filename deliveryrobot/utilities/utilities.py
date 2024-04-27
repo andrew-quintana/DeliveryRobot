@@ -128,7 +128,7 @@ def deg_rad( deg ):
     """
     return deg * (np.pi / 180)
 
-def insert_zeros(matrix, row_index, col_index, num_rows, num_cols):
+def insert_rows_cols(matrix, row_index, col_index, num_rows, num_cols):
     """
     Inserts rows and columns into a NumPy matrix at the specified indices and replaces them with all 0s.
     
@@ -142,6 +142,7 @@ def insert_zeros(matrix, row_index, col_index, num_rows, num_cols):
     Returns:
         np.ndarray: The modified matrix with the new rows and columns inserted and replaced with 0s.
     """
+    if len(matrix.shape) == 1: matrix = np.expand_dims(matrix, axis=1)
     rows, cols = matrix.shape
     
     # Create new rows and columns filled with 0s
@@ -250,3 +251,25 @@ def save(matrix, dir=None, subdir_0=None, subdir_1=None, filename=None):
     cv2.imwrite(path, img)
 
     return path
+
+def get_psi_symbol():
+    return 'ψ'
+
+def compare_arrays(arr1, arr2):
+    """
+    Compares two NumPy arrays and prints the row, column, and value of each inconsistency.
+
+    Args:
+        arr1 (np.ndarray): The first array to compare.
+        arr2 (np.ndarray): The second array to compare.
+
+    Raises:
+        ValueError: If the input arrays have different shapes.
+    """
+    if arr1.shape != arr2.shape:
+        raise ValueError("Input arrays must have the same shape.")
+
+    for i in range(arr1.shape[0]):
+        for j in range(arr1.shape[1]):
+            if arr1[i, j] != arr2[i, j]:
+                print(f"Inconsistency at row {i}, column {j}: {arr1[i, j]} != {arr2[i, j]}")
