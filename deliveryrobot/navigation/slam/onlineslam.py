@@ -74,7 +74,7 @@ class OnlineSLAM( Component ):
 
         """
 
-        if verbose: print("MEASUREMENTS PROCESSING")
+        if debug: print("MEASUREMENTS PROCESSING")
 
         for key in measurements:
 
@@ -103,8 +103,8 @@ class OnlineSLAM( Component ):
                 self.Xi[i, 0] += -measurements[key][i]
                 self.Xi[idx + i, 0] += measurements[key][i]
 
-            if verbose: print("Omega\n", self.Omega)
-            if verbose: print("Xi\n", self.Xi)
+            if debug: print("Omega\n", self.Omega)
+            if debug: print("Xi\n", self.Xi)
 
         return True
 
@@ -118,7 +118,7 @@ class OnlineSLAM( Component ):
 
         """
 
-        if verbose: print("MOVEMENT PROCESSING")
+        if debug: print("MOVEMENT PROCESSING")
 
         # determine theoretical new position
         new_robot_bearing_rad = self.map["ROBOT"][2] + rotation_rad
@@ -140,8 +140,8 @@ class OnlineSLAM( Component ):
             self.Xi[i, 0] += -estimate[i]
             self.Xi[self.dim + i, 0] += estimate[i]
 
-        if verbose: print("Omega\n", self.Omega)
-        if verbose: print("Xi\n", self.Xi)
+        if debug: print("Omega\n", self.Omega)
+        if debug: print("Xi\n", self.Xi)
 
         return True
 

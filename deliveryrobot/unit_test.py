@@ -37,6 +37,7 @@ from sensors.calibration.camera_calibration import *
 from apriltag import Detector
 from sensors.camera.apriltagsensor import *
 from navigation.slam.onlineslam import *
+from navigation.astar.astar import *
 
 err_tol = 1e-2
 rounding_tol = 1e-6
@@ -586,6 +587,54 @@ class TestOnlineSLAM(unittest.TestCase):
         for key in self.slam.map:
             if verbose: print(f"test_map_update: key {key}")
             self.assertTrue(np.all(np.isclose(self.slam.map[key], sol_map[key], rounding_tol)))
+
+class TestAstar(unittest.TestCase):
+
+    def setUp( self ):
+        
+        self.nav = Astar( 2, np.pi/4, 0.010, 5,
+                               0.1, 1, 0.015 )
+        self.robot_state = np.array([0., 0., 0.])
+        
+    """def test_in_plane_move( self ):
+
+        # straight line to goal
+        goal_state = np.array([0.1, 0., 0.])
+        self.nav.set_goal(goal_state)
+        obstacles = {}
+
+        # run search
+        test = self.nav.astar_move(self.nav.beam_search, self.robot_state, goal_state, obstacles)
+        self.assertTrue(test.next == INFO.GOAL_FOUND)"""
+
+    def test_orthogonal_move( self ):
+
+        # orthogonal move to goal
+        goal_state = np.array([0., 0.1, 0.])
+        self.nav.set_goal(goal_state)
+        obstacles = {}
+
+        # run search
+        test = self.nav.astar_move(self.nav.beam_search, self.robot_state, goal_state, obstacles)
+        self.assertTrue(test.next == INFO.GOAL_FOUND)
+
+    def test_avoid_obstacle( self ):
+
+        # straight line to goal
+        goal_state = np.array([0.2, 0., 0.])
+        self.nav.set_goal(goal_state)
+
+        # setup obstacle directly in front
+        obstacles = {"8": np.array([[   [0.025, 0.025, 0],
+                                        [0.025, -0.025, 0],
+                                        [0.050, -0.025, 0],
+                                        [0.050, 0.025, 0]]])}
+
+        # run search
+        test = self.nav.astar_move(self.nav.beam_search, self.robot_state, goal_state, obstacles)
+        self.assertTrue(test.next == INFO.GOAL_FOUND)
+
+
 
 if __name__ == '__main__':
     unittest.main()

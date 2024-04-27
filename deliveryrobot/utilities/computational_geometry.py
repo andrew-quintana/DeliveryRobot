@@ -40,6 +40,17 @@ logging = True
 debug = True
 verbose = False
 
+def euclidian( state1, state2 ):
+    x1_m, y1_m = state1
+    x2_m, y2_m = state2
+
+    dx = abs(x1_m - x2_m)
+    dy = abs(y1_m - y2_m)
+
+    heuristic = np.sqrt(dx**2 + dy**2)
+
+    return heuristic
+
 def relative_angle( u, v ):
     """
     calculates the angle (in radians) between two n-dimensional vectors.
@@ -286,7 +297,7 @@ def test_node(node, obstacles, agent_radius_m, fos):
 
     # TODO (P3): determine if node too close to boundary of environment
 
-    for obstacle_points in obstacles:
+    for obstacle_points in obstacles.values():
         left_count = 0
 
         for i in range(len(obstacle_points)):
