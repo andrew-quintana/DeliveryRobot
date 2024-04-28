@@ -30,10 +30,7 @@ Examples:
 
 from utilities.utilities import *
 from utilities.computational_geometry import test_node, test_edge, relative_angle, euclidian
-
-import sys
-sys.path.append('/opt/homebrew/Cellar/graph-tool/2.59_2/lib/python3.12/site-packages')
-from graph_tool.all import *
+from utilities.mapper import Map
 
 import numpy as np
 from numpy.linalg import norm
@@ -52,11 +49,51 @@ class Action:
         self.path = path
         self.goal_state = goal_state
 
+class Vertex:
+    def __init__(self, state, f, g, h, prev, index):
+        self.state = np.array(state) if not isinstance(state, np.ndarray) else state
+        self.f = f
+        self.g = g
+        self.h = h
+        self.prev = prev
+        self.index = index
+
+class Graph:
+    def __init__(self):
+        self.vertices = []
+        self.adjacency_list = {}
+        self.vertex_index_map = {}
+
+    def add_vertex(self, vertex):
+        self.vertices.append(vertex)
+        self.adjacency_list[vertex] = []
+        self.vertex_index_map[vertex.index] = vertex
+
+    def add_edge(self, vertex1, vertex2):
+        self.adjacency_list[vertex1].append(vertex2)
+        self.adjacency_list[vertex2].append(vertex1)
+
+    def get_vertex_properties(self, vertex):
+        return vertex.state, vertex.f, vertex.g, vertex.h, vertex.prev
+    
+    def clear(self):
+        """
+        Clears the contents of the Graph object.
+        """
+        self.vertices.clear()
+        self.adjacency_list.clear()
+        self.vertex_index_map.clear()
+
 class Astar( Component ):
 
     def __init__( self, beam_resolution, beam_range, max_distance, heuristic_weight, 
                  cost, fos, robot_radius_m ):
         
+        # graph preparation
+        self.graph = Graph()
+
+        self.reset()
+
         # object attributes
         self.beam_resolution = beam_resolution
         self.beam_range = beam_range
@@ -73,34 +110,34 @@ class Astar( Component ):
         # manually assigned attributes
         self.tol = 5e-2
 
-        # graph preparation
-        self.G = Graph(directed=False)
+        
 
-        # create the vertex property maps
-        self.state = self.G.new_vertex_property("vector<float>")  # NumPy array
-        self.f = self.G.new_vertex_property("float")  # Float 1
-        self.g = self.G.new_vertex_property("float")  # Float 2
-        self.h = self.G.new_vertex_property("float")  # Float 3
-        self.prev = self.G.new_vertex_property("int")  # Integer
+    def reset( self ):
+        self.graph.clear()
+        try: del(self.action)
+        except: pass
 
-        # create home and goal states
-        self.home = self.create_vertex()
-        self.goal = self.create_vertex()
-        self.state[self.home] = np.zeros(3, dtype=np.float64) - 1.
-        self.state[self.goal] = np.zeros(3, dtype=np.float64) - 1.
-
-
-    def create_vertex( self ):
+    def add_vertex( self, state: State, f, g, h, prev ):
         """
-        Returns:
-            graph_tool.vertex: vertex object for graph
+        create the vertex with properties, updating all maps
+
+        Args:
+            v (graph-tool.vertex): vertex object to be updated
+            state (State): state information
+            f (float): total cost
+            g (float): action cost
+            h (float): heuristic cost
+            prev (int): idx of previous vertex
 
         """
-        node = self.G.add_vertex()
-        return node
+
+        vertex = Vertex(state, f, g, h, prev, len(self.graph.vertices))
+        self.graph.add_vertex(vertex)
+        return vertex
     
     def set_goal ( self, goal_state: State ):
         """
+        DON"T USE ME
         Sets the goal basd on new information. Goal is offset in front of
         the goal by the offset.
 
@@ -113,53 +150,28 @@ class Astar( Component ):
         goal_y_m = goal_state[1] + self.offset * np.sin(goal_state[2])
 
         # update goal
-        self.state[self.goal] = np.array([goal_x_m, goal_y_m, goal_state[2]])
+        #self.state[self.goal] = np.array([goal_x_m, goal_y_m, goal_state[2]])
 
-    def get_vertex_properties( self, v ):
+    def plot_map(self):
         """
-        gets the vertex properties
-
-        Returns:
-            v (graph-tool.vertex): vertex object to be updated
-            state (State): state information
-            f (float): total cost
-            g (float): action cost
-            h (float): heuristic cost
-            prev (int): idx of previous vertex
-
+        Plot the map based on the Action object.
         """
+        map = Map("Robot_Map", live=True)
 
-        # updates
-        state = self.state[v]
-        f = self.f[v]
-        g = self.g[v]
-        h = self.h[v]
-        prev = self.prev[v]
+        # Create a dictionary of the environment states
+        env = {
+            "ROBOT": self.robot_state,
+            "GOAL": self.goal_state
+        }
 
-        return np.array(state), f, g, h, prev
-    
-    def set_vertex_properties( self, v, state, f, g, h, prev ):
-        """
-        Sets the vertex properties, updating all maps
+        # Add the path points to the environment
+        for point_idx in self.action.path:
+            env[f"PATH_{point_idx}"] = self.graph.vertex_index_map[point_idx].state
 
-        Args:
-            v (graph-tool.vertex): vertex object to be updated
-            state (State): state information
-            f (float): total cost
-            g (float): action cost
-            h (float): heuristic cost
-            prev (int): idx of previous vertex
+        # Plot the map
+        map.plot_radar(env)
 
-        """
-
-        # updates
-        self.state[v] = state
-        self.f[v] = f
-        self.g[v] = g
-        self.h[v] = euclidian( state[:2], np.array(self.state[self.goal])[:2])
-        self.prev[v] = prev
-
-    def astar_move( self, search, robot_state, goal_state, obstacles ):
+    def astar_move( self, robot_state, goal_state, obstacles ):
         """
         determines next move for robot based on robot location, 
         provided set of obstacles, and goal location
@@ -175,25 +187,25 @@ class Astar( Component ):
         if debug: print_status(0, "STARTING MEASUREMENTS PROCESSING")
 
         # initialize the output action
-        action = Action()
-
-        # goal setup
-        self.set_goal(goal_state)
-        goal_dist = euclidian(self.state[self.home][:2], self.state[self.goal][:2])
+        self.action = Action()
 
         # home setup
-        self.state[self.home] = robot_state
+        self.robot_state = robot_state
+
+        # goal setup
+        self.goal_state = goal_state
+        goal_dist = euclidian(self.robot_state, self.goal_state)
 
         # check if close enough to park
         if goal_dist <= self.max_offset:
-            action.next = INFO.AT_GOAL
+            self.action.next = INFO.AT_GOAL
         # use search method and astar to find paths
         else:
-            action = search( action, obstacles )
+            self.beam_search( obstacles )
 
-        return action
+        return self.action
 
-    def beam_search( self, action, obstacles):
+    def beam_search( self, obstacles):
         """
         Intention is to learn about paths that can be created by a limited set from each node.
         The subsequent tree from each should evaluate the best options given a heruistic.
@@ -201,7 +213,6 @@ class Astar( Component ):
         obstacle to find the last forked node and pursue the one with the smallest euclidian.
 
         Args:
-            action (Action): blank object with information about next steps
             obstacles (StateDict): identified obstacles and states
 
         Returns:
@@ -216,42 +227,34 @@ class Astar( Component ):
         closed_list = PriorityQueue()
 
         # initialize start vertex
-        start = self.create_vertex()
         g = 0
-        h = euclidian(self.state[self.home][:2], self.state[self.goal][:2]) * self.heuristic_weight
+        h = euclidian(self.robot_state, self.goal_state) * self.heuristic_weight
         f = g + h
 
-        self.set_vertex_properties(start, self.state[self.home], f, g, h, -1)
-        open_list.put((f, start))
-        closed_list.put((f, start))
+        start = self.add_vertex( self.robot_state, f, g, h, None)
+        open_list.put((f, start.index))
+        closed_list.put((f, start.index))
 
         # flags and counter
         found = False
-        failed = False
         count = 0
 
-        while not found or count > 3:
-
-            # create 
-            inspect_node = self.create_vertex()
-
-            print("open list size", open_list.qsize())
+        while not found:
 
             # exhausted opportunities for movement
             if open_list.empty():
-                action.next = INFO.NOT_AT_GOAL
+                self.action.next = INFO.FAILED
                 break
             # pick ideal node per heuristic and cost calculation
             else:
-                _, inspect_node = open_list.get()
-
-            print("open list size", open_list.qsize())
+                _, inspect_node_idx = open_list.get()
 
             # add to closed list
-            closed_list.put((-self.f[inspect_node], inspect_node))
+            inspect_node = self.graph.vertex_index_map[inspect_node_idx]
+            closed_list.put((inspect_node.f, inspect_node.index))
 
             # get information from vertex
-            vertex_state, f, g, h, prev = self.get_vertex_properties(inspect_node)
+            vertex_state, f, g, h, prev = self.graph.get_vertex_properties(inspect_node)
             count += 1
 
             if debug: print_status(1, f"INSPECTING NODE {inspect_node} AT {vertex_state} WITH f: {f}, g {g}, h {h}")
@@ -259,82 +262,78 @@ class Astar( Component ):
             # determine range of steering angles to pursue
             angles = np.linspace(-self.beam_range, self.beam_range, self.beam_resolution * 2 + 1)
 
-            print(f"WITH GOAL {self.state[self.goal]} AT {norm(np.array(self.state[inspect_node]) - np.array(self.state[self.goal]))} AWAY")
-            input(self.get_vertex_properties(inspect_node))
+            if debug: print(f"WITH GOAL {self.goal_state} AT {euclidian(inspect_node.state, self.goal_state)} AWAY")
+            if verbose: input(self.graph.get_vertex_properties(inspect_node))
 
             for i, a in enumerate(angles):
 
                 # project potential next state
-                s2 = vertex_state[2] + a
+                s2 = inspect_node.state[2] + a
                 d2 = self.max_distance
-                x2 = d2 * np.cos(s2) + vertex_state[0]
-                y2 = d2 * np.sin(s2) + vertex_state[1]
-                next_state = [x2, y2, s2]
+                x2 = d2 * np.cos(s2) + inspect_node.state[0]
+                y2 = d2 * np.sin(s2) + inspect_node.state[1]
+                next_state = np.array([x2, y2, s2])
 
                 if debug: print_status(2, f"INSPECTING MOVE {d2} m, {a} rad to {next_state}")
 
                 # check potential node
-                if not test_node(vertex_state, obstacles, self.robot_radius_m, self.fos): continue
+                if not test_node(next_state, obstacles, self.robot_radius_m, self.fos): continue
                 if not test_edge(vertex_state, next_state, obstacles, self.robot_radius_m, self.fos): continue
 
                 # distance to goal
-                euc_dist_m = euclidian(next_state[:2], self.state[self.goal][:2])
+                euc_dist_m = euclidian(next_state, self.goal_state)
                     
                 g2 = g + self.cost
                 h2 = euc_dist_m * self.heuristic_weight
                 f2 = g2 + h2
 
-                if debug: print_status(3, f"MOVE {d2} m, {a} rad to {next_state} ADDED WITH f: {f2}, g: {g2}, h: {h2}")
-
                 # create vertex instance
-                next_vertex = self.create_vertex()
-                self.set_vertex_properties(next_vertex, next_state, f2, g2, h2, inspect_node)
+                next_vertex = self.add_vertex(next_state, f2, g2, h2, inspect_node)
+
+                if debug: print_status(3, f"MOVE {d2} m, {a} rad to {next_state} ADDED WITH f: {f2}, g: {g2}, h: {h2}, IDX: {next_vertex.index}")
 
                 # update lists
-                open_list.put((f2, next_vertex))
+                open_list.put((f2, next_vertex.index))
                 
                 # check if within range of goal
+                print(f"{euc_dist_m < self.max_offset} DISTANCE {euc_dist_m} < {self.max_offset}")
                 if euc_dist_m < self.max_offset:
-                    if debug: print_status(4, f"REACHED {next_state} W/IN RANGE OF TARGET {self.state[self.goal]}")
+                    if debug: print_status(4, f"REACHED {next_state} W/IN RANGE OF TARGET {self.goal_state} with idx {next_vertex.index}")
 
                     found = True
 
                     # determine next action
+                    self.action.path = []
                     action_idx = -1
-                    prev = self.prev[next_vertex]
-                    while prev != -1:
-                        action.path.insert(0,prev)
-                        action_idx = prev
-                        prev = self.prev[prev]
+                    prev_vertex = self.graph.vertex_index_map[next_vertex.index]
+                    while prev_vertex != None:
+                        self.action.path.insert(0, prev_vertex.index)
+                        action_idx = prev_vertex.index
+                        prev_vertex = self.graph.vertex_index_map[prev_vertex.index].prev
 
-                    action.distance = euclidian(self.state[action_idx][:2], np.array([self.state[start]])[:2])
-                    action.steering = relative_angle(self.state[start], self.state[action_idx])
-                    action.goal = self.state[self.goal]
-                    self.next = INFO.NA
+                    action_vertex = self.graph.vertex_index_map[action_idx]
+                    self.action.distance = euclidian(action_vertex.state, self.robot_state)
+                    self.action.steering = relative_angle(self.robot_state, action_vertex.state)
+                    self.action.goal = self.goal_state
+                    self.action.next = INFO.NA
 
                     if debug:
                         print_status(1, f"UPCOMING PATH:\n")
-                        for node in action.path:
+                        for node in self.action.path:
                             print(f"\tNODE: {node}\n\
-                                    \tLOC: {self.state[node]}\n")
-                
-                if verbose: input(f"PAUSE AT {count}")
-
-        # clear graph for next move
-        self.G.clear()
-
-        return action
+                                    \tLOC: {self.graph.vertex_index_map[node].state}\n")
+                    
+                    # save a map image
+                    self.plot_map()
+                    break
     
     # euclidian heuristic based on
     # http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html
-    def heuristic(self, location, goal):
+    def heuristic(self, location):
 
-        r, c, _ = location
-        x, y, _ = goal
+        euc_dist = euclidian(location, self.goal_state)
+        home_to_goal = euclidian(self.robot_state, self.goal_state)
 
-        dx = abs(x - r)
-        dy = abs(y - c)
-
-        heuristic = self.heuristic_weight * np.sqrt(dx**2 + dy**2)
-
-        return heuristic
+        return home_to_goal - euc_dist
+    
+    

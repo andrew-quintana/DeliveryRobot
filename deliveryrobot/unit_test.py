@@ -294,7 +294,7 @@ class TestUtilities(unittest.TestCase):
         b = np.array([1, 0])
         c = np.array([1, 1])
         d = np.array([0, 1])
-        obstacles = [[a,b,c,d]]
+        obstacles = {"8": np.array([a,b,c,d])}
 
         # Test case 1: too close
         line_start = np.array([-10, -10])
@@ -330,7 +330,7 @@ class TestUtilities(unittest.TestCase):
         b = np.array([1, 0])
         c = np.array([1, 1])
         d = np.array([0, 1])
-        obstacles = [[a,b,c,d]]
+        obstacles = {"8": np.array([a,b,c,d])}
         agent_radius_m = 1
         fos = 1.5
 
@@ -381,7 +381,7 @@ class TestUtilities(unittest.TestCase):
         expected_result = -2
         self.assertEqual(result, expected_result)
 
-"""
+
 class TestCalibration(unittest.TestCase):
     def test_calibrate_fisheye_checkerboard(self):
         
@@ -417,12 +417,12 @@ class TestCalibration(unittest.TestCase):
             self.assertTrue(False)
         
         self.assertTrue(True)
-"""
+
         
 class TestAprilTagSensor(unittest.TestCase):
     def setUp(self):
         self.sensor = AprilTagSensor(cal_dir)
-        self.image_path = '/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/deliveryrobot/test_samples/0x_45y.jpg'
+        self.image_path = '/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/deliveryrobot/test_samples/0x_30y.jpg'
 
     def test_detect(self):
         # Load the sample image
@@ -592,47 +592,46 @@ class TestAstar(unittest.TestCase):
 
     def setUp( self ):
         
-        self.nav = Astar( 2, np.pi/4, 0.010, 5,
-                               0.1, 1, 0.015 )
+        self.scalar = 1
+        self.nav = Astar( 5, np.pi/4, 0.010*self.scalar, 1000/self.scalar,
+                               1, 1, 0.015*self.scalar )
         self.robot_state = np.array([0., 0., 0.])
         
-    """def test_in_plane_move( self ):
+        
+    def test_in_plane_move( self ):
 
         # straight line to goal
-        goal_state = np.array([0.1, 0., 0.])
-        self.nav.set_goal(goal_state)
+        goal_state = np.array([0.1, 0., 0.]) * self.scalar
         obstacles = {}
 
         # run search
-        test = self.nav.astar_move(self.nav.beam_search, self.robot_state, goal_state, obstacles)
-        self.assertTrue(test.next == INFO.GOAL_FOUND)"""
+        test = self.nav.astar_move(self.robot_state, goal_state, obstacles)
+        self.assertTrue(test.next == INFO.NA)
 
     def test_orthogonal_move( self ):
 
         # orthogonal move to goal
-        goal_state = np.array([0., 0.1, 0.])
-        self.nav.set_goal(goal_state)
+        goal_state = np.array([0., 0.1, 0.]) * self.scalar
         obstacles = {}
 
         # run search
-        test = self.nav.astar_move(self.nav.beam_search, self.robot_state, goal_state, obstacles)
-        self.assertTrue(test.next == INFO.GOAL_FOUND)
+        test = self.nav.astar_move(self.robot_state, goal_state, obstacles)
+        self.assertTrue(test.next == INFO.NA)
 
     def test_avoid_obstacle( self ):
 
         # straight line to goal
-        goal_state = np.array([0.2, 0., 0.])
-        self.nav.set_goal(goal_state)
+        goal_state = np.array([0.2, 0., 0.]) * self.scalar
 
         # setup obstacle directly in front
-        obstacles = {"8": np.array([[   [0.025, 0.025, 0],
+        obstacles = {"8": np.array([   [0.025, 0.025, 0],
                                         [0.025, -0.025, 0],
                                         [0.050, -0.025, 0],
-                                        [0.050, 0.025, 0]]])}
+                                        [0.050, 0.025, 0]]) * self.scalar}
 
         # run search
-        test = self.nav.astar_move(self.nav.beam_search, self.robot_state, goal_state, obstacles)
-        self.assertTrue(test.next == INFO.GOAL_FOUND)
+        test = self.nav.astar_move(self.robot_state, goal_state, obstacles)
+        self.assertTrue(test.next == INFO.NA)
 
 
 

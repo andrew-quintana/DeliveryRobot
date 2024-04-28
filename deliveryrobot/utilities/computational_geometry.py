@@ -41,8 +41,10 @@ debug = True
 verbose = False
 
 def euclidian( state1, state2 ):
-    x1_m, y1_m = state1
-    x2_m, y2_m = state2
+
+    if debug: print(state1, state2)
+    x1_m, y1_m, _ = state1
+    x2_m, y2_m, _ = state2
 
     dx = abs(x1_m - x2_m)
     dy = abs(y1_m - y2_m)
@@ -71,17 +73,23 @@ def relative_angle( u, v ):
         angle_rad = np.arctan2(vector[1],vector[0])
 
     else:
-        # Calculate the unit vectors
-        unit_u = u / np.linalg.norm(u)
-        unit_v = v / np.linalg.norm(v)
 
-        # Calculate the angle between the unit vectors
-        angle_rad = np.arccos(np.clip(np.dot(unit_u, unit_v), -1, 1))
+        if norm(u) == 0:
+            angle_rad =  np.arctan2(v[1],v[0])
+        elif norm(v) == 0:
+            angle_rad = np.arctan2(u[1],u[0]) + np.pi
+        else:
+            # Calculate the unit vectors
+            unit_u = u / np.linalg.norm(u)
+            unit_v = v / np.linalg.norm(v)
 
-        # Determine the sign of the angle
-        cross_product = np.cross(unit_u, unit_v)
-        angle_sign = np.sign(cross_product)
-        angle_rad *= angle_sign
+            # Calculate the angle between the unit vectors
+            angle_rad = np.arccos(np.clip(np.dot(unit_u, unit_v), -1, 1))
+
+            # Determine the sign of the angle
+            cross_product = np.cross(unit_u, unit_v)
+            angle_sign = np.sign(cross_product)
+            angle_rad *= angle_sign
     
     # normalize the angle
     angle_rad = normalize_angle(angle_rad)
@@ -214,7 +222,7 @@ def left( a, b, c ):
         output (bool)
     """
 
-    return xprod(a,b,c) > 0
+    return left_math(a,b,c) > 0
 
 def left_on( a, b, c ):
     """
@@ -229,7 +237,9 @@ def left_on( a, b, c ):
         output (bool)
     """
 
-    return xprod(a,b,c) >= 0
+    return left_math(a,b,c) >= 0
+
+def left_math( a, b, c ): return ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
 
 def test_edge(line_start, line_end, obstacles, agent_radius_m, fos):
     """
@@ -246,17 +256,16 @@ def test_edge(line_start, line_end, obstacles, agent_radius_m, fos):
         bool: True if the line segment is valid, False otherwise.
     """
 
-    for obstacle_points in obstacles:
+    for obstacle_points in obstacles.values():
         for i in range(len(obstacle_points)):
             j = (i + 1) % len(obstacle_points)
-
             if verbose:
                 print(f"OBSTACLE VERTEX TO EDGE TEST:\tOB VERTEX: \
                       ({obstacle_points[i][0]:.2f}, {obstacle_points[i][1]:.2f})\t \
                       EDGE ({line_start[0]:.2f}, {line_start[1]:.2f})-({line_end[0]:.2f}, {line_end[1]:.2f})")
 
             if distance_point_to_segment(obstacle_points[i], line_start, line_end) < agent_radius_m * fos:
-                if verbose:
+                if debug:
                     print(f"OBSTACLE VERTEX TOO CLOSE TO EDGE:\tOB VERTEX: \
                           ({obstacle_points[i][0]:.2f}, {obstacle_points[i][1]:.2f})\t \
                             EDGE ({line_start[0]:.2f}, {line_start[1]:.2f})-({line_end[0]:.2f}, {line_end[1]:.2f})")
@@ -270,7 +279,7 @@ def test_edge(line_start, line_end, obstacles, agent_radius_m, fos):
                                    {obstacle_points[j][1]:.2f})")
 
             if intersects(line_start, line_end, obstacle_points[i], obstacle_points[j]):
-                if verbose:
+                if debug:
                     print(f"NODE EDGE INTERSECTS WITH OBSTACLE EDGE:\tNODE EDGE: \
                           ({line_start[0]:.2f}, {line_start[1]:.2f})-({line_end[0]:.2f}, {line_end[1]:.2f})\t \
                             OBS EDGE: ({obstacle_points[i][0]:.2f}, \
@@ -304,9 +313,9 @@ def test_node(node, obstacles, agent_radius_m, fos):
             j = (i + 1) % len(obstacle_points)
 
             if distance_point_to_segment(node, obstacle_points[i], obstacle_points[j]) < agent_radius_m * fos:
-                if verbose:
+                if debug:
                     print(f"NODE TOO CLOSE TO OBSTACLE EDGE:\tNODE: ({node[0]:.2f}, {node[1]:.2f})\t \
-                          EDGE ({obstacle_points[i][0]:.2f}, \
+                        EDGE ({obstacle_points[i][0]:.2f}, \
                                 {obstacle_points[i][1]:.2f})-({obstacle_points[j][0]:.2f}, \
                                 {obstacle_points[j][1]:.2f})")
                 return False
@@ -317,10 +326,10 @@ def test_node(node, obstacles, agent_radius_m, fos):
         if verbose:
             print(f"LEFT COUNT = {left_count} of {len(obstacle_points)}")
         if left_count < len(obstacle_points):
-            if verbose:
+            if debug:
                 print(f"NODE INSIDE OBSTACLE:\t \
-                      NODE: ({node[0]:.2f}, {node[1]:.2f})\t \
-                      OBSTACLE LEFT_ON {left_count}")
+                    NODE: ({node[0]:.2f}, {node[1]:.2f})\t \
+                    OBSTACLE LEFT_ON {left_count}")
 
     return True
 

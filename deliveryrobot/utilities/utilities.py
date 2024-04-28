@@ -86,6 +86,7 @@ class INFO( Enum ):
     NOT_AT_GOAL = 4 
     ERROR = -1
     UNKNOWN = -2
+    FAILED = -3
 
 # state vector type alias
 State: TypeAlias = np.ndarray[np.float64, Tuple[3, 1]]
