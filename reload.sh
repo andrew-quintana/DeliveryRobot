@@ -9,4 +9,4 @@ cd ~
 rm -rf DeliveryRobot
 
 # get the branch's updates
-git clone --single-branch --branch hardware_integration https://github.com/andrew-quintana/DeliveryRobot.git
+git clone https://github.com/andrew-quintana/DeliveryRobot.git
