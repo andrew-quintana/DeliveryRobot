@@ -1,14 +1,13 @@
-from utilities.utilities import *
 
 import platform
 import sys
 import os
-if platform.system == 'Linux':
-    sys.path.append("/workspace/jetbot")
-    from jetbot.jetbot import Robot, Camera, bgr8_to_jpeg
-else:
-    sys.path.append("include")
-    from include.jetbot import Robot, Camera, bgr8_to_jpeg
+sys.path.append("../../../jetbot/")
+from jetbot import Robot, Camera, bgr8_to_jpeg
+
+sys.path.append("../../deliveryrobot")
+from utilities.utilities import *
+
 
 
 from uuid import uuid1

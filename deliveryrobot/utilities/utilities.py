@@ -33,7 +33,6 @@ import os
 import cv2
 from enum import Enum
 import numpy as np
-from numpy.typing import NDArray, ArrayLike
 from numpy.linalg import *
 
 # ------------------------------------- SYSTEM -------------------------------------
