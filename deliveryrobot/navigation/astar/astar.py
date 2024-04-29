@@ -117,13 +117,13 @@ class Astar( Component ):
         try: del(self.action)
         except: pass
 
-    def add_vertex( self, state: State, f, g, h, prev ):
+    def add_vertex( self, state, f, g, h, prev ):
         """
         create the vertex with properties, updating all maps
 
         Args:
             v (graph-tool.vertex): vertex object to be updated
-            state (State): state information
+            state (ndarray): state information
             f (float): total cost
             g (float): action cost
             h (float): heuristic cost
@@ -135,7 +135,7 @@ class Astar( Component ):
         self.graph.add_vertex(vertex)
         return vertex
     
-    def set_goal ( self, goal_state: State ):
+    def set_goal ( self, goal_state ):
         """
         DON"T USE ME
         Sets the goal basd on new information. Goal is offset in front of

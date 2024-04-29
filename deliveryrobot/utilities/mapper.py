@@ -176,7 +176,7 @@ class Map( Component ):
         High level plotter for running all of the processes
 
         Args:
-            env (StateDict): list of states in environment
+            env (dict(str, ndarray)): list of states in environment
             save_path (str): 
 
         """
@@ -211,12 +211,12 @@ class Map( Component ):
         else: save(self.img, "map", "iter", filename=f"map_{self.n}")
 
 # TODO Fix me
-def generate_obstacle( tag_state: State, side_length_m):
+def generate_obstacle( tag_state, side_length_m):
     """
     determine whether or not line ab intersects with line cd
 
     Args:
-        tag_state (State): center point of the tag
+        tag_state (ndarray): center point of the tag
         side_length_m (float): length of virtual obstacle
 
     Returns:

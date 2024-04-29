@@ -16,8 +16,6 @@ approximately_equal
 
 Attributes:
 INFO: enum for communicating with fsm
-State: type alias for 3x1 float array
-StateDict: type alias for dictionary of strings and States
 
 Dependencies:
 time, enum, typing, numpy
@@ -34,7 +32,6 @@ import time
 import os
 import cv2
 from enum import Enum
-from typing import Dict, Tuple, TypeAlias
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
 from numpy.linalg import *
@@ -87,12 +84,6 @@ class INFO( Enum ):
     ERROR = -1
     UNKNOWN = -2
     FAILED = -3
-
-# state vector type alias
-State: TypeAlias = np.ndarray[np.float64, Tuple[3, 1]]
-
-# type annotated environment dictionary
-StateDict: TypeAlias = Dict[str, State]
 
 # ------------------------------------- FUNCTIONS ------------------------------------
 

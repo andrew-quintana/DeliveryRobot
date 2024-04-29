@@ -453,7 +453,7 @@ class TestOnlineSLAM(unittest.TestCase):
     def setUp( self ):
 
         # create measurements for consideration
-        self.measurements: StateDict = {}
+        self.measurements = {}
         self.measurements["1"] = np.array([60., 70., 1.])
         self.measurements["2"] = np.array([-50., 30., -2.])
         self.measurements["3"] = np.array([-100., 20., -4])

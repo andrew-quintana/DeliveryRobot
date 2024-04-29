@@ -42,7 +42,7 @@ class OnlineSLAM( Component ):
         Constructor of the online slam instance
 
         Returns:
-            StateDict: map of all of the states in the environment
+            dict(str, ndarray): map of all of the states in the environment
         """
         # matrices for calculation
         self.mu = np.zeros((dim,1), dtype=np.float64)
@@ -53,24 +53,24 @@ class OnlineSLAM( Component ):
         self.dim = dim
 
         # environment information
-        self.map: StateDict = {"ROBOT": np.array([70., -220., 8.])}     # tracks all states
+        self.map = {"ROBOT": np.array([70., -220., 8.])}     # tracks all states
         self.landmarks = {"ROBOT": 0}                               # tracks indices in array
 
     def get_map( self ):
         """
         Returns:
-            StateDict: map of all of the states in the environment
+            dict(str, ndarray): map of all of the states in the environment
 
         """
 
         return self.map
     
-    def process_measurements( self, measurements: StateDict ):
+    def process_measurements( self, measurements ):
         """
         process information from scan
 
         Args:
-            measurements (StateDict): measurements from the last scan
+            measurements (dict(str, ndarray)): measurements from the last scan
 
         """
 
@@ -114,7 +114,7 @@ class OnlineSLAM( Component ):
         process movement commanded
 
         Args:
-            measurements (StateDict): measurements from the last scan
+            measurements (dict(str, ndarray)): measurements from the last scan
 
         """
 
@@ -124,7 +124,7 @@ class OnlineSLAM( Component ):
         new_robot_bearing_rad = self.map["ROBOT"][2] + rotation_rad
         new_robot_delta_x_m = translation_m * np.cos(new_robot_bearing_rad)
         new_robot_delta_y_m = translation_m * np.sin(new_robot_bearing_rad)
-        estimate: State = np.array([new_robot_delta_x_m, new_robot_delta_y_m, new_robot_bearing_rad])
+        estimate = np.array([new_robot_delta_x_m, new_robot_delta_y_m, new_robot_bearing_rad])
 
         # expand information and vector matrices by one new position
         self.Omega = insert_rows_cols(self.Omega, self.dim, self.dim, self.dim, self.dim)
