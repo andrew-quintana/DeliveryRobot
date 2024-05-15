@@ -43,7 +43,7 @@ class AprilTagSensor( Component ):
         inputSettingsFile = os.path.join(cal_dir, "default.xml")
         self.detector = apriltag.Detector(apriltag.DetectorOptions(families='tag16h5'))
 
-        if not os.path.exists('/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/deliveryrobot/test_samples/default.xml'):
+        if not os.path.exists(inputSettingsFile):
             calibrate_fisheye_checkerboard(DIR)
 
         with open(inputSettingsFile, "r"):
@@ -66,16 +66,16 @@ class AprilTagSensor( Component ):
         im = None
         im = cv2.imread(image_path)
 
-        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY,)
+        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
         # Detect AprilTags in image
         detections = self.detector.detect(gray)
 
-        if verbose: print("FOUND", len(detections), "DETECTIONS")
+        if debug: print("FOUND", len(detections), "DETECTIONS")
 
         for i, detection in enumerate(detections):
             
-            if verbose: print("detection", i, ": id", detection.tag_id, "hamming", detection.hamming, "margin", detection.decision_margin)
+            if debug: print("detection", i, ": id", detection.tag_id, "hamming", detection.hamming, "margin", detection.decision_margin)
 
             # Check if invalid AprilTag detected
             if detection.tag_id > 10:
@@ -100,14 +100,18 @@ class AprilTagSensor( Component ):
 
             # Get pose
             pose, tag_size, err = self.detector.detection_pose(detection, camera_params, tag_size=0.015)
-
+            print(pose)
+            print(tag_size)
+            print(err)
 
             # Extract the position and orientation of the tag
             position = pose[:3,-1:]
             rotation_matrix = pose[:3, :3]
 
-            roll, pitch, yaw = rotation_conversion(rotation_matrix)
-            r_state = [roll, pitch, yaw]
+            r_vec, _ = cv2.Rodrigues(rotation_matrix)
+            print(r_vec)
+            r_state = [r_vec[2,0], r_vec[1,0], r_vec[0,0]]
+            print(r_state)
 
             if verbose: print("APRILTAG ID:", detection.tag_id)
 
@@ -116,19 +120,16 @@ class AprilTagSensor( Component ):
                 continue
 
             psi_idx = 2
-
-            # Correct measurements that have the AprilTag facing away
-            if abs(r_state[psi_idx]) < np.pi/2:
-                r_state[psi_idx] = r_state[psi_idx] + np.pi if r_state[psi_idx] > 0 else r_state[psi_idx] - np.pi
-
-            # Convert to x, y
-            x = position[2,0] * np.sin(r_state[psi_idx]) * -500
-            y = position[2,0] * np.cos(r_state[psi_idx]) * -100
+            
+            # Convert to x, y, psi of jetbot
+            x = position[2,0] * 10
+            y = position[1,0] * -10
+            psi = r_state[psi_idx] * -1
 
             # Assign calculated and measured values
-            measurements[str(detection.tag_id)] = [x, y, r_state[psi_idx]]
+            measurements[str(detection.tag_id)] = [x, y, psi]
 
-            cv2.imwrite(f"/Users/aq_home/Library/CloudStorage/OneDrive-Personal/1ODocuments/Projects/jetbot_parking/DeliveryRobot_python/docs/images/perspective/tag{detection.tag_id}_live.jpg", annotate(im, detection, measurements[str(detection.tag_id)]))
+            cv2.imwrite(f"{image_dir}/perspective/tag{detection.tag_id}_live.jpg", annotate(im, detection, measurements[str(detection.tag_id)]))
 
         return True
     
@@ -162,8 +163,9 @@ def annotate( image, detection, state ):
     cv2.circle(image, (cX, cY), 5, (0, 0, 255), -1)
     # draw the tag family on the image
     tagFamily = detection.tag_family.decode("utf-8")
-    tag_string = f"{tagFamily}: {detection.tag_id}\n\
-                    X: {state[0]:2f} Y: {state[1]:2f} {get_psi_symbol()}: {state[2]:2f}"
+    tag_string = f"{tagFamily}: {detection.tag_id}"   
+    pose_string = f"X: {state[0]:2f} Y: {state[1]:2f} psi: {state[2]:2f}"
     cv2.putText(image, tag_string, (ptA[0], ptA[1] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    cv2.putText(image, pose_string, (ptD[0] - 30, ptD[1] + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         
     return image

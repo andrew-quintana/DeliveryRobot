@@ -49,6 +49,8 @@ def calibrate_fisheye_checkerboard(DIR):
     distCoeffs = np.zeros((4, 1), dtype=np.float64)
     rvecs = np.array([],np.float64)
     tvecs = np.array([],np.float64)
+    K = np.zeros((3, 3))
+    D = np.zeros((4, 1))
     frame_size = None
 
     # local image variables
@@ -58,21 +60,27 @@ def calibrate_fisheye_checkerboard(DIR):
 
     # board information
     CHECKERBOARD = (6, 9)  # (rows, cols)
+    square_size_mm = 30
 
     # Defining the world coordinates for 3D points
-    objp = np.zeros((1, CHECKERBOARD[0]*CHECKERBOARD[1], 3), np.float32)
+    objp = np.zeros((1, (CHECKERBOARD[0]*CHECKERBOARD[1]), 3), np.float32)
     objp[0,:,:2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
+    print(objp.dtype, objp.shape)
 
-    images = glob.glob(f"{DIR}/*.jpg")
-    image_size = np.array((2,1))
-    for i, fname in enumerate(images):
+    # Arrays to store object points and image points
+    objpoints = []  # 3D point in real world space
+    imgpoints = []  # 2D points in image plane
+
+
+    # Iterate through the calibration images
+    for i, fname in enumerate(os.listdir(DIR)):
 
         # attept to import
-        frame = cv2.imread(fname)
+        frame = cv2.imread(os.path.join(DIR, fname))
 
         # error checks
         if frame is None:
-            print(f"Warning 100: Invalid Filetype - Image file {i} wasn't able to be imported.")
+            print(f"Warning 100: Invalid Filetype - Image file {i} wasn't able to be imported: {fname}")
             continue
 
         if _image_shape == None:
@@ -84,15 +92,14 @@ def calibrate_fisheye_checkerboard(DIR):
         image_size = gray.shape[:2]
 
         # finding checkerboard corners
-        ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD, None)
+        ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD, cv2.CALIB_CB_ADAPTIVE_THRESH)
 
         if ret:
-            objpoints.append(objp)
+            objpoints.append(objp.copy())
             
             corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
-            imgpoints.append(corners2)
-
-            cv2.drawChessboardCorners(frame, CHECKERBOARD, corners, ret)
+            print(corners2.dtype, corners2.shape)
+            imgpoints.append(corners2.astype(np.float32))
 
             if verbose:
                 frame = cv2.drawChessboardCorners(frame, CHECKERBOARD, corners2, ret)
@@ -100,14 +107,24 @@ def calibrate_fisheye_checkerboard(DIR):
                 cv2.waitKey(0)
 
         else:
-            print(f"Warning 200: Chessboard Processing - Not enough corners could be detected in image file {i}")
+            print(f"Warning 200: Chessboard Processing - Not enough corners could be detected in image file {i}: {fname}")
 
     cv2.destroyAllWindows()
 
     # calibrate per opencv
-    print(len(objpoints), len(imgpoints))
+    calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC + cv2.fisheye.CALIB_CHECK_COND + cv2.fisheye.CALIB_FIX_SKEW
+    
     ret, K, D, rvecs, tvecs = cv2.fisheye.calibrate(
-        objpoints, imgpoints, image_size, None, None)
+        np.array(objpoints, dtype=np.float32),
+        np.array(imgpoints, dtype=np.float32),
+        image_size,
+        K,
+        D,
+        rvecs,
+        tvecs,
+        calibration_flags,
+        (cv2.TERM_CRITERIA_EPS+cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-6)
+    )
 
     # create camera matrices
     cameraMatrix = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frame_size, 0)

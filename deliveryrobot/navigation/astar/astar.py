@@ -142,7 +142,7 @@ class Astar( Component ):
         the goal by the offset.
 
         Args:
-            goal_state (State): state of goal
+            goal_state (ndarray): state of goal
 
         """
         # calculate offset in x and y
@@ -178,9 +178,9 @@ class Astar( Component ):
 
         Args:
             search (func): search function for implementation
-            robot_state (State): current state of the robot
-            obstacles (StateDict): identified obstacles and states
-            goal_state (State): estimated state of goal
+            robot_state (ndarray): current state of the robot
+            obstacles (dict(str, ndarray)): identified obstacles and states
+            goal_state (ndarray): estimated state of goal
 
         """
 
@@ -213,7 +213,7 @@ class Astar( Component ):
         obstacle to find the last forked node and pursue the one with the smallest euclidian.
 
         Args:
-            obstacles (StateDict): identified obstacles and states
+            obstacles (dict(str, ndarray)): identified obstacles and states
 
         Returns:
             Action: object with information about next steps
