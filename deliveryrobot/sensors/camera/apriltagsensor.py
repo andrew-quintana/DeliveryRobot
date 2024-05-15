@@ -124,7 +124,7 @@ class AprilTagSensor( Component ):
             # Convert to x, y, psi of jetbot
             x = position[2,0] * 10
             y = position[1,0] * -10
-            psi = r_state[psi_idx] * -1
+            psi = r_state[psi_idx] * 1
 
             # Assign calculated and measured values
             measurements[str(detection.tag_id)] = [x, y, psi]
