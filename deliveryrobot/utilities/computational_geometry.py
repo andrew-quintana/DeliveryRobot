@@ -37,7 +37,7 @@ import CGAL
 from CGAL.CGAL_Kernel import Vector_2, Point_2, Polygon_2, Line_2, squared_distance
 
 logging = True
-debug = True
+debug = False
 verbose = False
 
 def euclidian( state1, state2 ):

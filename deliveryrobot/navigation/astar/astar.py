@@ -48,6 +48,13 @@ class Action:
         self.steering_rad = steering_rad
         self.path = path
         self.goal_state = goal_state
+        
+    def print_info(self):
+        print("Next: ", self.next)
+        print("Distance (m): ", self.distance_m)
+        print("Steering (rad): ", self.steering_rad)
+        print("Path: ", self.path)
+        print("Goal State: ", self.goal_state)
 
 class Vertex:
     def __init__(self, state, f, g, h, prev, index):
@@ -88,6 +95,8 @@ class Astar( Component ):
 
     def __init__( self, beam_resolution, beam_range, max_distance, heuristic_weight, 
                  cost, fos, robot_radius_m ):
+        
+        super().__init__()
         
         # graph preparation
         self.graph = Graph()
@@ -142,7 +151,7 @@ class Astar( Component ):
         the goal by the offset.
 
         Args:
-            goal_state (ndarray): state of goal
+            goal_state (State): state of goal
 
         """
         # calculate offset in x and y
@@ -151,6 +160,7 @@ class Astar( Component ):
 
         # update goal
         #self.state[self.goal] = np.array([goal_x_m, goal_y_m, goal_state[2]])
+        self.goal_state = np.array([goal_x_m, goal_y_m, goal_state[2]])
 
     def plot_map(self):
         """
@@ -171,30 +181,33 @@ class Astar( Component ):
         # Plot the map
         map.plot_radar(env)
 
-    def astar_move( self, robot_state, goal_state, obstacles ):
+    def astar_move( self, robot_state, obstacles, goal_state = [] ):
         """
         determines next move for robot based on robot location, 
         provided set of obstacles, and goal location
 
         Args:
             search (func): search function for implementation
-            robot_state (ndarray): current state of the robot
-            obstacles (dict(str, ndarray)): identified obstacles and states
-            goal_state (ndarray): estimated state of goal
+            robot_state (State): current state of the robot
+            obstacles (StateDict): identified obstacles and states
+            goal_state (State): estimated state of goal
 
         """
 
-        if debug: print_status(0, "STARTING MEASUREMENTS PROCESSING")
+        if self.debug: print_status(0, "STARTING MEASUREMENTS PROCESSING")
 
-        # initialize the output action
-        self.action = Action()
 
         # home setup
         self.robot_state = robot_state
 
         # goal setup
-        self.goal_state = goal_state
+        if goal_state != []:
+            self.set_goal(goal_state)
         goal_dist = euclidian(self.robot_state, self.goal_state)
+        
+        # initialize the output action
+        self.action = Action()
+        self.action.goal_state = self.goal_state
 
         # check if close enough to park
         if goal_dist <= self.max_offset:
@@ -213,14 +226,14 @@ class Astar( Component ):
         obstacle to find the last forked node and pursue the one with the smallest euclidian.
 
         Args:
-            obstacles (dict(str, ndarray)): identified obstacles and states
+            obstacles (StateDict): identified obstacles and states
 
         Returns:
             Action: object with information about next steps
 
         """
         
-        if debug: print_status(0, "STARTING BEAM SEARCH")
+        if self.debug: print_status(0, "STARTING BEAM SEARCH")
 
         # initialize necessary function variables and objects
         open_list = PriorityQueue()
@@ -257,13 +270,13 @@ class Astar( Component ):
             vertex_state, f, g, h, prev = self.graph.get_vertex_properties(inspect_node)
             count += 1
 
-            if debug: print_status(1, f"INSPECTING NODE {inspect_node} AT {vertex_state} WITH f: {f}, g {g}, h {h}")
+            if self.debug: print_status(1, f"INSPECTING NODE {inspect_node.index} AT {vertex_state} WITH f: {f}, g {g}, h {h}")
                 
             # determine range of steering angles to pursue
             angles = np.linspace(-self.beam_range, self.beam_range, self.beam_resolution * 2 + 1)
 
-            if debug: print(f"WITH GOAL {self.goal_state} AT {euclidian(inspect_node.state, self.goal_state)} AWAY")
-            if verbose: input(self.graph.get_vertex_properties(inspect_node))
+            if self.debug: print(f"WITH GOAL {self.goal_state} AT {euclidian(inspect_node.state, self.goal_state)} AWAY")
+            if self.verbose: input(self.graph.get_vertex_properties(inspect_node))
 
             for i, a in enumerate(angles):
 
@@ -274,7 +287,7 @@ class Astar( Component ):
                 y2 = d2 * np.sin(s2) + inspect_node.state[1]
                 next_state = np.array([x2, y2, s2])
 
-                if debug: print_status(2, f"INSPECTING MOVE {d2} m, {a} rad to {next_state}")
+                if self.debug: print_status(2, f"INSPECTING MOVE {d2} m, {a} rad to {next_state}")
 
                 # check potential node
                 if not test_node(next_state, obstacles, self.robot_radius_m, self.fos): continue
@@ -290,15 +303,15 @@ class Astar( Component ):
                 # create vertex instance
                 next_vertex = self.add_vertex(next_state, f2, g2, h2, inspect_node)
 
-                if debug: print_status(3, f"MOVE {d2} m, {a} rad to {next_state} ADDED WITH f: {f2}, g: {g2}, h: {h2}, IDX: {next_vertex.index}")
+                if self.debug: print_status(3, f"MOVE {d2} m, {a} rad to {next_state} ADDED WITH f: {f2}, g: {g2}, h: {h2}, IDX: {next_vertex.index}")
 
                 # update lists
                 open_list.put((f2, next_vertex.index))
                 
                 # check if within range of goal
-                print(f"{euc_dist_m < self.max_offset} DISTANCE {euc_dist_m} < {self.max_offset}")
+                if self.verbose: print(f"{euc_dist_m < self.max_offset} DISTANCE {euc_dist_m} < {self.max_offset}")
                 if euc_dist_m < self.max_offset:
-                    if debug: print_status(4, f"REACHED {next_state} W/IN RANGE OF TARGET {self.goal_state} with idx {next_vertex.index}")
+                    if self.debug: print_status(4, f"REACHED {next_state} W/IN RANGE OF TARGET {self.goal_state} with idx {next_vertex.index}")
 
                     found = True
 
@@ -311,18 +324,33 @@ class Astar( Component ):
                         action_idx = prev_vertex.index
                         prev_vertex = self.graph.vertex_index_map[prev_vertex.index].prev
 
-                    action_vertex = self.graph.vertex_index_map[action_idx]
-                    self.action.distance = euclidian(action_vertex.state, self.robot_state)
-                    self.action.steering = relative_angle(self.robot_state, action_vertex.state)
-                    self.action.goal = self.goal_state
+                    print("action_idx",action_idx)
+                    print(self.action.path[1])
+                    
+                    action_vertex = self.graph.vertex_index_map[self.action.path[1]]
+                    print(action_vertex.state)
+                    print(self.robot_state)
+                    print(euclidian(action_vertex.state, self.robot_state))
+                    self.action.distance_m = euclidian(action_vertex.state, self.robot_state)
+                    self.action.steering_rad = relative_angle(self.robot_state, action_vertex.state)
                     self.action.next = INFO.NA
-
-                    if debug:
+                    
+                    
+                    if self.logging:
+                        dist_sum_x = 0
+                        dist_sum_y = 0
+                        turn_sum = 0
+                        prev_angle = 0
                         print_status(1, f"UPCOMING PATH:\n")
                         for node in self.action.path:
                             print(f"\tNODE: {node}\n\
                                     \tLOC: {self.graph.vertex_index_map[node].state}\n")
-                    
+                            dist_sum_x += self.graph.vertex_index_map[node].state[0]
+                            dist_sum_y += self.graph.vertex_index_map[node].state[1]
+                            turn_sum += prev_angle
+                            prev_angle = self.graph.vertex_index_map[node].state[2]
+                        
+                        print(f"WITH TURN TOTALS OF X: {dist_sum_x}, Y: {dist_sum_y}, PSI: {turn_sum}")
                     # save a map image
                     self.plot_map()
                     break

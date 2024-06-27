@@ -47,9 +47,6 @@ image_dir = os.path.join(docs_dir, "images")
 cal_dir = os.path.join(image_dir, "calibration")
 
 # debugging/logging
-logging = True
-debug = True
-verbose = False
 
 # ------------------------------------- CLASSES -------------------------------------
 
@@ -58,7 +55,7 @@ class Component:
     Base component superclass.
     """
 
-    def __init__( self, logging, debug, verbose ):
+    def __init__( self, logging=True, debug=True, verbose=False ):
         """
         Constructor of superclass.
 
@@ -237,7 +234,6 @@ def save(matrix, dir=None, subdir_0=None, subdir_1=None, filename=None):
         os.makedirs(path)
 
     path = os.path.join(path,filename)
-    if verbose: print(f"\tImage {path} saved.")
 
     cv2.imwrite(path, img)
 

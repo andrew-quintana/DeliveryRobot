@@ -44,6 +44,8 @@ class OnlineSLAM( Component ):
         Returns:
             dict(str, ndarray): map of all of the states in the environment
         """
+        super().__init__()
+        
         # matrices for calculation
         self.mu = np.zeros((dim,1), dtype=np.float64)
         self.Omega = np.eye(dim, dtype=np.float64)
@@ -74,8 +76,7 @@ class OnlineSLAM( Component ):
 
         """
 
-        if debug: print("MEASUREMENTS PROCESSING")
-
+        if self.debug: print("MEASUREMENTS PROCESSING")
         for key in measurements:
 
             # do not include robot location
@@ -103,8 +104,8 @@ class OnlineSLAM( Component ):
                 self.Xi[i, 0] += -measurements[key][i]
                 self.Xi[idx + i, 0] += measurements[key][i]
 
-            if debug: print("Omega\n", self.Omega)
-            if debug: print("Xi\n", self.Xi)
+            if self.debug: print("Omega\n", self.Omega)
+            if self.debug: print("Xi\n", self.Xi)
 
         return True
 
@@ -118,7 +119,7 @@ class OnlineSLAM( Component ):
 
         """
 
-        if debug: print("MOVEMENT PROCESSING")
+        if self.debug: print("MOVEMENT PROCESSING")
 
         # determine theoretical new position
         new_robot_bearing_rad = self.map["ROBOT"][2] + rotation_rad
@@ -140,8 +141,8 @@ class OnlineSLAM( Component ):
             self.Xi[i, 0] += -estimate[i]
             self.Xi[self.dim + i, 0] += estimate[i]
 
-        if debug: print("Omega\n", self.Omega)
-        if debug: print("Xi\n", self.Xi)
+        if self.debug: print("Omega\n", self.Omega)
+        if self.debug: print("Xi\n", self.Xi)
 
         return True
 
@@ -151,7 +152,7 @@ class OnlineSLAM( Component ):
 
         """
 
-        if debug: print("MAPPING UPDATE")
+        if self.debug: print("MAPPING UPDATE")
 
         if motion:
 
@@ -169,15 +170,14 @@ class OnlineSLAM( Component ):
         
         # determine mu
         self.mu = np.matmul(inv(self.Omega), self.Xi)
-        if debug: print(f"Calculated mu as:\n{self.mu}")
+        if self.debug: print(f"Calculated mu as:\n{self.mu}")
 
         # map update
         for key in self.landmarks:
             idx = self.landmarks[key]
             for i in range(self.dim):
-                print(idx)
                 self.map[key][i] = self.mu[idx + i, 0]
 
-        if debug: print("map\n", self.map)
+        if self.debug: print("map\n", self.map)
 
         return True

@@ -65,7 +65,6 @@ def calibrate_fisheye_checkerboard(DIR):
     # Defining the world coordinates for 3D points
     objp = np.zeros((1, (CHECKERBOARD[0]*CHECKERBOARD[1]), 3), np.float32)
     objp[0,:,:2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
-    print(objp.dtype, objp.shape)
 
     # Arrays to store object points and image points
     objpoints = []  # 3D point in real world space
@@ -98,7 +97,6 @@ def calibrate_fisheye_checkerboard(DIR):
             objpoints.append(objp.copy())
             
             corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
-            print(corners2.dtype, corners2.shape)
             imgpoints.append(corners2.astype(np.float32))
 
             if verbose:
@@ -127,17 +125,30 @@ def calibrate_fisheye_checkerboard(DIR):
     )
 
     # create camera matrices
-    cameraMatrix = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frame_size, 0)
+    K = cv2.getOptimalNewCameraMatrix(K, D, image_size, 0)
+    
+    # Create empty UMat objects for the undistortion maps
+    map1 = cv2.UMat()
+    map2 = cv2.UMat()
+    
+    # update camera and distortion arrays to matrices
+    K_mat = cv2.UMat(K[0].astype(np.float32))
+    D_mat = cv2.UMat(D.astype(np.float32))
 
     # undistort
     cv2.fisheye.initUndistortRectifyMap(
-        cameraMatrix[0],
-        distCoeffs,
+        K_mat,
+        D_mat,
         np.eye(3),
-        cameraMatrix[0],
+        K_mat,
         image_size,
-        cv2.CV_16SC2
+        cv2.CV_32FC1,
+        map1,
+        map2
     )
+    
+    K = np.asarray(K_mat)
+    D = np.asarray(D_mat)
 
     # setup write out
     outputSettingsFile = DIR + "/default.xml"
@@ -151,17 +162,17 @@ def calibrate_fisheye_checkerboard(DIR):
 
     # print all before writing
     if logging: print(f"WRITING TO {outputSettingsFile}")
-    if logging: print("camera_matrix:", cameraMatrix[0])
-    if logging: print("distortion_coefficients:", distCoeffs)
+    if logging: print("camera_matrix:", K)
+    if logging: print("distortion_coefficients:", D)
     if logging: print("rotation_vectors:", rvecs[0])
-    if logging: print("translation_vectors:", tvecs)
-    if logging: print("frame_size:", frame_size)
+    if logging: print("translation_vectors:", tvecs[0])
+    if logging: print("frame_size:", image_size)
 
     # intrinsic parameters
-    fs.write("camera_matrix", cameraMatrix[0])
-    fs.write("distortion_coefficients", distCoeffs)
+    fs.write("camera_matrix", K)
+    fs.write("distortion_coefficients", D)
     fs.write("rotation_vectors", rvecs[0])
     fs.write("translation_vectors", tvecs[0])
-    fs.write("frame_size", frame_size)
+    fs.write("frame_size", image_size)
 
     if logging: print("Camera calibration COMPLETE.")

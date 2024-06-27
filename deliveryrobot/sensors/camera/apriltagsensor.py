@@ -39,6 +39,7 @@ import apriltag
 class AprilTagSensor( Component ):
     
     def __init__( self, DIR ):
+        super().__init__()
 
         inputSettingsFile = os.path.join(cal_dir, "default.xml")
         self.detector = apriltag.Detector(apriltag.DetectorOptions(families='tag16h5'))
@@ -59,7 +60,7 @@ class AprilTagSensor( Component ):
 
                 fs.release()
 
-        if logging: print("AprilTag sensor setup COMPLETE")
+        if self.logging: print("AprilTag sensor setup COMPLETE")
         
     def detect( self, image_path, measurements ):
         # Convert image to sensor filetype
@@ -71,11 +72,11 @@ class AprilTagSensor( Component ):
         # Detect AprilTags in image
         detections = self.detector.detect(gray)
 
-        if debug: print("FOUND", len(detections), "DETECTIONS")
+        if self.verbose: print("FOUND", len(detections), "DETECTIONS")
 
         for i, detection in enumerate(detections):
             
-            if debug: print("detection", i, ": id", detection.tag_id, "hamming", detection.hamming, "margin", detection.decision_margin)
+            if self.verbose: print("detection", i, ": id", detection.tag_id, "hamming", detection.hamming, "margin", detection.decision_margin)
 
             # Check if invalid AprilTag detected
             if detection.tag_id > 10:
@@ -96,24 +97,19 @@ class AprilTagSensor( Component ):
             fy = self.camera_matrix[1, 1]
             cx = gray.shape[0] / 2
             cy = gray.shape[1] / 2
-            camera_params = [-1.5926459934911697e+03, -1.3325540650178916e+03, cx, cy]
+            camera_params = [fx, fy, cx, cy]
 
             # Get pose
             pose, tag_size, err = self.detector.detection_pose(detection, camera_params, tag_size=0.015)
-            print(pose)
-            print(tag_size)
-            print(err)
 
             # Extract the position and orientation of the tag
             position = pose[:3,-1:]
             rotation_matrix = pose[:3, :3]
 
             r_vec, _ = cv2.Rodrigues(rotation_matrix)
-            print(r_vec)
             r_state = [r_vec[2,0], r_vec[1,0], r_vec[0,0]]
-            print(r_state)
 
-            if verbose: print("APRILTAG ID:", detection.tag_id)
+            if self.verbose: print("APRILTAG ID:", detection.tag_id)
 
             if abs(position[2,0]) > 1:
                 print("WARNING: MEASUREMENT OUTSIDE OF WORKING RANGE.")

@@ -418,7 +418,8 @@ class TestCalibration(unittest.TestCase):
         
         self.assertTrue(True)
 
-        
+# python unit_test.py TestAprilTagSensor
+
 class TestAprilTagSensor(unittest.TestCase):
     def setUp(self):
         self.sensor = AprilTagSensor(cal_dir)
