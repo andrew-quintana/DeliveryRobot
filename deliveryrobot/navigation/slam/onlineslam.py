@@ -40,9 +40,6 @@ class OnlineSLAM( Component ):
     def __init__( self, dim ):
         """
         Constructor of the online slam instance
-
-        Returns:
-            dict(str, ndarray): map of all of the states in the environment
         """
         super().__init__()
         

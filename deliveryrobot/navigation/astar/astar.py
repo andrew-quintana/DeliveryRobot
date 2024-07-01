@@ -43,10 +43,10 @@ class Action:
                     steering_rad = 0., 
                     path = [], 
                     goal_state = np.zeros(3, dtype=np.float64) ):
-        self.next = next                    # communication for 
+        self.next = next                    # communication for state machine
         self.distance_m = distance_m
         self.steering_rad = steering_rad
-        self.path = path
+        self.path = path                    # [(idx, state)]
         self.goal_state = goal_state
         
     def print_info(self):
@@ -218,7 +218,7 @@ class Astar( Component ):
 
         return self.action
 
-    def beam_search( self, obstacles):
+    def beam_search( self, obstacles ):
         """
         Intention is to learn about paths that can be created by a limited set from each node.
         The subsequent tree from each should evaluate the best options given a heruistic.
@@ -320,17 +320,11 @@ class Astar( Component ):
                     action_idx = -1
                     prev_vertex = self.graph.vertex_index_map[next_vertex.index]
                     while prev_vertex != None:
-                        self.action.path.insert(0, prev_vertex.index)
+                        self.action.path.insert(0, (prev_vertex.index, prev_vertex.state))
                         action_idx = prev_vertex.index
                         prev_vertex = self.graph.vertex_index_map[prev_vertex.index].prev
-
-                    print("action_idx",action_idx)
-                    print(self.action.path[1])
                     
-                    action_vertex = self.graph.vertex_index_map[self.action.path[1]]
-                    print(action_vertex.state)
-                    print(self.robot_state)
-                    print(euclidian(action_vertex.state, self.robot_state))
+                    action_vertex = self.graph.vertex_index_map[self.action.path[1][0]]
                     self.action.distance_m = euclidian(action_vertex.state, self.robot_state)
                     self.action.steering_rad = relative_angle(self.robot_state, action_vertex.state)
                     self.action.next = INFO.NA
@@ -342,13 +336,13 @@ class Astar( Component ):
                         turn_sum = 0
                         prev_angle = 0
                         print_status(1, f"UPCOMING PATH:\n")
-                        for node in self.action.path:
+                        for node, state in self.action.path:
                             print(f"\tNODE: {node}\n\
                                     \tLOC: {self.graph.vertex_index_map[node].state}\n")
-                            dist_sum_x += self.graph.vertex_index_map[node].state[0]
-                            dist_sum_y += self.graph.vertex_index_map[node].state[1]
-                            turn_sum += prev_angle
-                            prev_angle = self.graph.vertex_index_map[node].state[2]
+                            dist_sum_x += state[0]
+                            dist_sum_y += state[1]
+                            turn_sum += prev_angle - state[2]
+                            prev_angle = state[2]
                         
                         print(f"WITH TURN TOTALS OF X: {dist_sum_x}, Y: {dist_sum_y}, PSI: {turn_sum}")
                     # save a map image
