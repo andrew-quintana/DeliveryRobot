@@ -34,10 +34,12 @@ import numpy as np
 import time
 import os
 import glob
+import xml.etree.ElementTree as ET
+
 
 logging = True
 debug = True
-verbose = False
+verbose = True
 
 def calibrate_fisheye_checkerboard(DIR):
     if logging: print("Camera calibration START.")
@@ -70,13 +72,14 @@ def calibrate_fisheye_checkerboard(DIR):
     objpoints = []  # 3D point in real world space
     imgpoints = []  # 2D points in image plane
 
-
+    print("Prepared, about to iterate")
     # Iterate through the calibration images
     for i, fname in enumerate(os.listdir(DIR)):
-
         # attept to import
         frame = cv2.imread(os.path.join(DIR, fname))
 
+        
+        
         # error checks
         if frame is None:
             print(f"Warning 100: Invalid Filetype - Image file {i} wasn't able to be imported: {fname}")
@@ -89,20 +92,19 @@ def calibrate_fisheye_checkerboard(DIR):
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         image_size = gray.shape[:2]
+        
 
         # finding checkerboard corners
         ret, corners = cv2.findChessboardCorners(gray, CHECKERBOARD, cv2.CALIB_CB_ADAPTIVE_THRESH)
 
         if ret:
             objpoints.append(objp.copy())
-            
             corners2 = cv2.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
             imgpoints.append(corners2.astype(np.float32))
-
-            if verbose:
+            """if verbose:
                 frame = cv2.drawChessboardCorners(frame, CHECKERBOARD, corners2, ret)
                 cv2.imshow(f'frame {i}', frame)
-                cv2.waitKey(0)
+                cv2.waitKey(0)"""
 
         else:
             print(f"Warning 200: Chessboard Processing - Not enough corners could be detected in image file {i}: {fname}")
@@ -147,32 +149,39 @@ def calibrate_fisheye_checkerboard(DIR):
         map2
     )
     
-    K = np.asarray(K_mat)
-    D = np.asarray(D_mat)
+    K = np.asarray(K_mat.get())
+    D = np.asarray(D_mat.get())
 
-    # setup write out
-    outputSettingsFile = DIR + "/default.xml"
-    fs = cv2.FileStorage(outputSettingsFile, cv2.FILE_STORAGE_WRITE)
+    
+    # Helper function to convert numpy arrays to strings
+    def numpy_to_string(array):
+        return ' '.join(map(str, array.flatten()))
 
-    # find time
-    tm = time.time()
-    t2 = time.localtime(tm)
-    buf = time.strftime("%c", t2)
-    fs.write("calibration_time", buf)
+    # Create the root element
+    root = ET.Element("CalibrationData")
 
-    # print all before writing
-    if logging: print(f"WRITING TO {outputSettingsFile}")
-    if logging: print("camera_matrix:", K)
-    if logging: print("distortion_coefficients:", D)
-    if logging: print("rotation_vectors:", rvecs[0])
-    if logging: print("translation_vectors:", tvecs[0])
-    if logging: print("frame_size:", image_size)
+    # Create sub-elements
+    camera_matrix_element = ET.SubElement(root, "CameraMatrix")
+    camera_matrix_element.text = numpy_to_string(K)
 
-    # intrinsic parameters
-    fs.write("camera_matrix", K)
-    fs.write("distortion_coefficients", D)
-    fs.write("rotation_vectors", rvecs[0])
-    fs.write("translation_vectors", tvecs[0])
-    fs.write("frame_size", image_size)
+    dist_coeffs_element = ET.SubElement(root, "DistCoeffs")
+    dist_coeffs_element.text = numpy_to_string(D)
+
+    rvecs_element = ET.SubElement(root, "Rvecs")
+    for rvec in rvecs:
+        rvec_element = ET.SubElement(rvecs_element, "Rvec")
+        rvec_element.text = numpy_to_string(rvecs[0])
+
+    tvecs_element = ET.SubElement(root, "Tvecs")
+    for tvec in tvecs:
+        tvec_element = ET.SubElement(tvecs_element, "Tvec")
+        tvec_element.text = numpy_to_string(tvecs[0])
+
+    frame_size_element = ET.SubElement(root, "FrameSize")
+    frame_size_element.text = ' '.join(map(str, image_size))
+
+    # Write the tree to an XML file
+    tree = ET.ElementTree(root)
+    tree.write(DIR + "/default.xml")
 
     if logging: print("Camera calibration COMPLETE.")

@@ -32,7 +32,7 @@ Robotics {book}: https://www.roboticsbook.org/S52_diffdrive_actions.html
 
 """
 from typing import List, Tuple
-from kinematics_plotting import KinematicsPlotter
+from .kinematics_plotting import KinematicsPlotter
 import math
 import time
 import numpy as np
@@ -45,10 +45,10 @@ def get_unit_vector( vector: np.ndarray ):
     unit_vector = vector / np.linalg.norm(vector)
     return unit_vector
 
-class SteeringOutput():
+class SteeringOutput( Component ):
 
-    def __init__( self, linear_m_s_2: np.ndarray, angular_rad_s_2: float ):
-        self.linear_m_s_2 = linear_m_s_2            # velocity change
+    def __init__( self, linear_m_s_2=[0.0,0.0], angular_rad_s_2=0.):
+        self.linear_m_s_2 = linear_m_s_2
         self.angular_rad_s_2 = angular_rad_s_2
 
 
@@ -78,6 +78,9 @@ class Kinematic( Component ):
         # this should make it so it will estimate the relative time since the last move and all subsequent
         # calculations can be made effectively
 
+        if steering == None:
+            return
+        
         # update the position and orientation
         self.position += self.linear_m_s_2 * time
         self.orientation_rad += self.rotation_rad_s * time
@@ -98,24 +101,22 @@ class Kinematic( Component ):
         # create and update plotter
         if self.verbose: 
             self.kplot.pass_kinematic_values(self.time_inputs, self.position_inputs, self.velocity_inputs, self.acceleration_inputs,
-                              self.orientation_inputs, self.angular_velocity_inputs, self.angular_acceleration_inputs,
-                              self.slam_time_inputs, self.slam_position_inputs, self.slam_orientation_inputs)
+                              self.orientation_inputs, self.angular_velocity_inputs, self.angular_acceleration_inputs)
 
     def slam_update( self, state ):
         # update based on slam feedback
         self.position = state[0:2]
         self.orientation_rad = state[2]
 
-        self.kplot.pass_kinematic_values(slam_time_inputs=self.slam_time_inputs,
-                                         slam_position_inputs=self.slam_position_inputs,
-                                         slam_orientation_inputs=self.slam_orientation_inputs)
+        self.kplot.pass_kinematic_values(slam_time_inputs=time.time(),
+                                    slam_position_inputs=self.position,
+                                slam_orientation_inputs=self.orientation_rad)
 
     def new_orientation( self, current: float, velocity: np.ndarray ):
         # ensure velocity
         if np.linalg.norm(velocity) > 0:
             # calculate orientation from the velocity
             return math.atan2(-velocity[0], velocity[1])
-        
         else:
             return current
 
@@ -123,28 +124,43 @@ class Kinematic( Component ):
         # calculate desired velocity vectors
         vx_desired = self.linear_m_s[0] + linear_m_s_2[0] * dt
         vy_desired = self.linear_m_s[1] + linear_m_s_2[1] * dt
+        self.linear_m_s = [vx_desired, vy_desired]
 
         # calculate angle between current velocity and desired velocity
         current_heading = self.orientation_rad
         desired_heading = math.atan2(vy_desired, vx_desired)
         angle_diff = desired_heading - current_heading
+        
+        print(current_heading)
+        print(desired_heading)
+        print(angle_diff)
 
         # calculate desired magnitudes
-        self.linear_m_s = math.sqrt(vx_desired ** 2 + vy_desired ** 2)
+        velocity_desired = math.sqrt(vx_desired ** 2 + vy_desired ** 2)
         omega_desired = angle_diff / dt
         self.rotation_rad_s = max(min(omega_desired, self.max_turn_rad_s), -self.max_turn_rad_s)
 
-        return self.linear_m_s, self.rotation_rad_s
+        return velocity_desired, omega_desired
         
     def get_wheel_velocities( self, v: float, omega: float, dt: float, L=0.120, r=0.065 ):
         # based on DDR inverse kinematics equations
         phi_dot_l = (v - (L / 2) * omega) / r
         phi_dot_r = (v + (L / 2) * omega) / r
+        
+        velocities = np.array([phi_dot_l, phi_dot_r])
+        
+        if any(filter(lambda x: x > 0.2, velocities)):
+            velocities = get_unit_vector(velocities) * 0.2
+        
         return phi_dot_l, phi_dot_r
     
     def get_drive_params( self, steering: SteeringOutput, dt:float ):
         velocity, omega = self.get_velocity_vector(steering.linear_m_s_2, steering.angular_rad_s_2, dt)
+        print(steering.linear_m_s_2, steering.angular_rad_s_2)
         v_l, v_r = self.get_wheel_velocities(velocity, omega, dt)
+        
+        
+        
         return v_l, v_r
 
 class Path( Component ):
@@ -152,14 +168,12 @@ class Path( Component ):
     # update as necessary by including new astar paths
 
     def __init__( self,
-                path: List[Tuple[int, np.ndarray]],
-                goal_idx: int):
-        self.path = [state for _, state in path]
-        self.goal_idx = goal_idx
+                path: List[Tuple[int, np.ndarray]]):
+        self.states = [state for _, state in path]
         self.next_idx = 1
 
     def update_path( self, path: List[Tuple[int, np.ndarray]]):
-        self.path = path
+        self.states = [state for _, state in path]
         self.next_idx = 1
 
 class MovementAI( Component ):
@@ -175,41 +189,50 @@ class MovementAI( Component ):
         self.max_acceleration_m_s_2 = max_acceleration_m_s_2
         self.max_angular_acceleration_m_s_2 = max_angular_acceleration_m_s_2
         self.goal_radius_m = goal_radius_m
+        
+        # behavior initialization
+        self.arrive = self.Arrive(self, max_speed_m_s=self.robot.max_speed_m_s * 0.5, target_radius_m=0.1, slow_radius_m=0.5)
+        self.align = self.Align(self, max_rotation_rad_s=self.robot.max_turn_rad_s, target_thresh_rad=0.1, slow_radius_m=0.5)
+        self.path = Path([])
+        self.path_following = self.PathFollowing(self, path=self.path, path_point_radius_m=0.2)
 
     class Seek( Component ):
-        @staticmethod
+        def __init__(self, outer_instance):
+            self.outer_instance = outer_instance
+            
         def get_steering( self ) -> SteeringOutput:
 
             result = SteeringOutput()
 
             # get the direction to the target
-            result.linear_m_s_2 = self.target.position - self.robot.position
+            result.linear_m_s_2 = self.outer_instance.target.position - self.outer_instance.robot.position
             
             # the velocity is along this direction, at full speed
-            result.linear_m_s_2 = get_unit_vector(result.linear_m_s_2) * self.max_acceleration_m_s_2
+            result.linear_m_s_2 = get_unit_vector(result.linear_m_s_2) * self.outer_instance.max_acceleration_m_s_2
 
             result.angular_rad_s_2 = 0
             return result
 
     class Arrive( Component ):
-        @staticmethod
         def __init__( self,
+                     outer_instance,
                     max_speed_m_s: float,
                     target_radius_m: float,
                     slow_radius_m: float,
                     time_to_target_s: float = 0.1 ):
+            self.outer_instance = outer_instance
             self.max_speed_m_s = max_speed_m_s
             self.target_radius_m = target_radius_m
             self.slow_radius_m = slow_radius_m
             self.time_to_target_s = time_to_target_s
 
-            self.max_acceleration_m_s_2 = 0.2
+            self.max_acceleration_m_s_2 = self.outer_instance.max_acceleration_m_s_2 / 2
 
         def get_steering( self ) -> SteeringOutput:
             result = SteeringOutput()
 
             # get direction to target
-            direction = self.target.position - self.robot.position
+            direction = self.outer_instance.target.position - self.outer_instance.robot.position
             distance = np.linalg.norm(direction)
 
             # check if there, return no steering
@@ -227,7 +250,7 @@ class MovementAI( Component ):
             target_velocity = get_unit_vector(target_velocity) * target_speed
 
             # acceleration tries to get to the target velocity
-            result.linear_m_s_2 = target_velocity - self.robot.linear_m_s_2
+            result.linear_m_s_2 = target_velocity - self.outer_instance.robot.linear_m_s_2
             result.linear_m_s_2 /= self.time_to_target_s
 
             # check if the acceleration is too fast
@@ -238,23 +261,26 @@ class MovementAI( Component ):
             return result
         
     class Align ( Component ):
-        @staticmethod
         def __init__( self,
+                     outer_instance,
                     max_rotation_rad_s: float,
                     target_thresh_rad: float,
                     slow_radius_m: float,
                     time_to_target_s: float = 0.1
                     ):
+            self.outer_instance = outer_instance
             self.max_rotation_rad_s = max_rotation_rad_s
             self.target_thresh_rad = target_thresh_rad
             self.slow_radius_m = slow_radius_m
             self.time_to_target_s = time_to_target_s
 
+            self.max_angular_acceleration_m_s_2 = self.outer_instance.max_angular_acceleration_m_s_2 / 2
+
         def get_steering( self ) -> SteeringOutput:
             result = SteeringOutput()
             
             # get the naive direction to the target
-            rotation = self.target.orientation_rad - self.robot.orientation_rad
+            rotation = self.outer_instance.target.orientation_rad - self.outer_instance.robot.orientation_rad
 
             # map result to (-pi, pi) interval
             rotation = normalize_angle(rotation)
@@ -287,27 +313,26 @@ class MovementAI( Component ):
 
 
     class PathFollowing( Seek ):
-        # TEST update Astar to provide full path and make an input
-        @staticmethod
         def __init__( self,
+                     outer_instance,
                     path: Path, 
                     path_point_radius_m: float):
-            self.path = path
+            super().__init__(outer_instance)
             self.path_point_radius_m = path_point_radius_m
 
         def get_steering( self ) -> SteeringOutput:
             # check if position is close enough to goal
-            distance_to_goal_m = abs(self.target.position - self.robot.position)
-            if distance_to_goal_m < self.goal_radius_m:
+            distance_to_goal_m = abs(self.outer_instance.target.position - self.outer_instance.robot.position)
+            if np.linalg.norm(distance_to_goal_m) < self.path_point_radius_m:
                 return None
             
             # check if position is close enough to next path point
-            distance_to_target_m = abs(self.path[self.path.next_idx] - self.robot.position)
-            if distance_to_target_m < self.path_point_radius_m:
-                self.path.next_index += 1
+            distance_to_target_m = abs(self.outer_instance.path.states[self.outer_instance.path.next_idx] - self.outer_instance.robot.position)
+            if np.linalg.norm(distance_to_target_m) < self.path_point_radius_m:
+                self.outer_instance.path.next_index += 1
 
             # set next path point as target position
-            self.target.position = self.path[self.path.next_idx]
+            self.outer_instance.target.position = self.outer_instance.path.states[self.outer_instance.path.next_idx]
 
             # delegate to seek
-            return MovementAI.Seek.get_steering()
+            return super().get_steering()

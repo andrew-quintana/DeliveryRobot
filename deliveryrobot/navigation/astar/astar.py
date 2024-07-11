@@ -175,8 +175,8 @@ class Astar( Component ):
         }
 
         # Add the path points to the environment
-        for point_idx in self.action.path:
-            env[f"PATH_{point_idx}"] = self.graph.vertex_index_map[point_idx].state
+        for idx, state in self.action.path:
+            env[f"PATH_{idx}"] = state
 
         # Plot the map
         map.plot_radar(env)
@@ -339,12 +339,7 @@ class Astar( Component ):
                         for node, state in self.action.path:
                             print(f"\tNODE: {node}\n\
                                     \tLOC: {self.graph.vertex_index_map[node].state}\n")
-                            dist_sum_x += state[0]
-                            dist_sum_y += state[1]
-                            turn_sum += prev_angle - state[2]
-                            prev_angle = state[2]
-                        
-                        print(f"WITH TURN TOTALS OF X: {dist_sum_x}, Y: {dist_sum_y}, PSI: {turn_sum}")
+
                     # save a map image
                     self.plot_map()
                     break

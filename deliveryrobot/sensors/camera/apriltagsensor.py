@@ -36,6 +36,12 @@ import numpy as np
 import math
 import apriltag
 
+import xml.etree.ElementTree as ET
+
+# Helper function to convert strings to numpy arrays
+def string_to_numpy(string, shape, dtype=np.float32):
+    return np.fromstring(string, sep=' ', dtype=dtype).reshape(shape)
+
 class AprilTagSensor( Component ):
     
     def __init__( self, DIR ):
@@ -48,17 +54,15 @@ class AprilTagSensor( Component ):
             calibrate_fisheye_checkerboard(DIR)
 
         with open(inputSettingsFile, "r"):
-                # read the settings
-                fs = cv2.FileStorage(inputSettingsFile, cv2.FILE_STORAGE_READ)
+            tree = ET.parse(inputSettingsFile)
+            root = tree.getroot()
 
-                # intrinsic parameters
-                self.camera_matrix = np.array(fs.getNode("camera_matrix").mat(), dtype=np.float64)
-                self.distortion_coefficients = np.array(fs.getNode("distortion_coefficients").mat(), dtype=np.float64)
-                self.rotation_vectors = np.array(fs.getNode("rotation_vectors").mat(), dtype=np.float64)
-                self.translation_vectors = np.array(fs.getNode("translation_vectors").mat(), dtype=np.float64)
-                self.frame_size = np.array(fs.getNode("translation_vectors").mat(), dtype=np.float64)
-
-                fs.release()
+            # intrinsic parameters
+            self.camera_matrix = string_to_numpy(root.find("CameraMatrix").text, (3, 3))
+            self.dist_coeffs = string_to_numpy(root.find("DistCoeffs").text, (-1,))
+            self.rvecs = [string_to_numpy(rvec.text, (3,)) for rvec in root.find("Rvecs")]
+            self.tvecs = [string_to_numpy(tvec.text, (3,)) for tvec in root.find("Tvecs")]
+            self.frame_size = tuple(map(int, root.find("FrameSize").text.split()))
 
         if self.logging: print("AprilTag sensor setup COMPLETE")
         

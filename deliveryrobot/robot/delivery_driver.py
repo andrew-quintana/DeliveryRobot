@@ -33,12 +33,14 @@ import platform
 import sys
 import os
 
-sys.path.append("../../../jetbot/")
-sys.path.append("../../deliveryrobot")
 
+from kinematics.movementai import *
+
+sys.path.append("../../../jetbot/")
 from jetbot import Robot, Camera, bgr8_to_jpeg
+
+sys.path.append("../../deliveryrobot")
 from utilities.utilities import *
-from deliveryrobot.robot.movementai import *
 
 from uuid import uuid1
 import cv2
@@ -52,31 +54,33 @@ class DeliveryRobot:
 
         # hardware setup
         self.robot = Robot()
-        self.camera = Camera.instance(width=1224, height=1124)
+        self.camera = Camera.instance(width=1224, height=1224)
 
         # AI movement setup
         self.robot_ai = Kinematic(
             state=np.array([0,0,0]),
-            linear_m_s_2=np.array([0,0]),
+            linear_m_s=np.array([0,0]),
             rotation_rad_s=0.0,
             max_speed_m_s=0.5,
             max_turn_rad_s=1.0)
         self.target_ai = Kinematic(
             state=np.array([0,0,0]),
-            linear_m_s_2=np.array([0,0]),
+            linear_m_s=np.array([0,0]),
             rotation_rad_s=0.0,
             max_speed_m_s=0.0,
             max_turn_rad_s=0.0)
         self.movement_ai = MovementAI(
             self.robot_ai,
             self.target_ai,
-            max_acceleration_m_s_2=0.5,
-            max_angular_acceleration_m_s_2=1.0,
+            max_acceleration_m_s_2=0.02,
+            max_angular_acceleration_m_s_2=0.02,
             goal_radius_m=0.1)
+        
 
-
-    def take_picture(self, directory):
-        filename = os.path.join(directory, str(uuid1()) + '.jpg')
+    def take_picture(self, directory, filename=""):
+        if filename == "": name = str(uuid1()) + '.jpg'
+        else: name = filename
+        filename = os.path.join(directory, name)
         cv2.imwrite(filename, self.camera.value)
         return filename
 
@@ -108,16 +112,13 @@ class DeliveryRobot:
         self.robot_ai.slam_update(robot_state)
         self.target_ai.slam_update(goal_state)
 
-    def update_path_ai(self, path: List[Tuple[int, np.ndarray]], goal_idx: int):
+    def update_path_ai(self, path: List[Tuple[int, np.ndarray]]):
         # check if created
-        if hasattr(self, 'path'):
-            self.path.update_path(path)
-        else:
-            self.path = Path(path, goal_idx)
+        self.movement_ai.path.update_path(path)
 
     def path_follow_ai(self, dt: float):
-        # determine steering commands
-        steering = self.movement_ai.PathFollowing(path=self.path, path_point_radius_m=0.050)
+        # execute
+        steering = self.movement_ai.path_following.get_steering()
 
         # determine driving parameters
         v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
@@ -125,6 +126,8 @@ class DeliveryRobot:
         # actuate motors
         self.robot.left(v_left)
         self.robot.right(v_right)
+        
+        return steering
 
     def arrive_ai(self, dt: float):
         # determine steering commands
@@ -141,6 +144,8 @@ class DeliveryRobot:
         # actuate motors
         self.robot.left(v_left)
         self.robot.right(v_right)
+        
+        return steering
 
     def align_ai(self, dt: float):
         # determine steering commands
@@ -150,6 +155,10 @@ class DeliveryRobot:
             slow_radius_m=0.5,
             time_to_target_s=0.5
         )
+        
+        # test for finish
+        if steering == None:
+            return -1
 
         # determine driving parameters
         v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
@@ -157,3 +166,5 @@ class DeliveryRobot:
         # actuate motors
         self.robot.left(v_left)
         self.robot.right(v_right)
+        
+        return 1
