@@ -61,8 +61,8 @@ class DeliveryRobot:
             state=np.array([0, 0, 0], dtype=np.float64),
             linear_m_s=np.array([0, 0], dtype=np.float64),
             rotation_rad_s=0.0,
-            max_speed_m_s=0.015,
-            max_turn_rad_s=1.0
+            max_speed_m_s=0.02,
+            max_turn_rad_s=0.005
         )
         self.target_ai = Kinematic(
             state=np.array([0, 0, 0], dtype=np.float64),
@@ -76,7 +76,7 @@ class DeliveryRobot:
             self.target_ai,
             max_acceleration_m_s_2=0.01,
             max_angular_acceleration_m_s_2=0.01,
-            goal_radius_m=0.1)
+            goal_radius_m=0.05)
         
 
     def take_picture(self, directory, filename=""):

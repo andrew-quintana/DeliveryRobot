@@ -64,8 +64,7 @@ class Kinematic( Component ):
         position, orientation_rad = state[0:2].astype(np.float64), state[2]    # convert from [x, y, psi]
 
 
-        #self.kplot = KinematicsPlotter()
-        print("created")
+        self.kplot = KinematicsPlotter()
         self.position = position                            # [x, y]
         self.orientation_rad = orientation_rad              # float value
         self.linear_m_s = linear_m_s.astype(np.float64)                        # [x', y']
@@ -147,10 +146,9 @@ class Kinematic( Component ):
         
         return v_l, v_r
     
-    def estimate_distance_traveled( self, dt: float, L=0.120 ):
-        
+    def estimate_distance_traveled(self, dt: float, L=0.120):
         v_l, v_r = self.wheel_velocities
-        
+
         # Calculate linear and angular velocities
         v = (v_r + v_l) / 2
         omega = (v_r - v_l) / L
@@ -158,16 +156,22 @@ class Kinematic( Component ):
         # Calculate the change in bearing
         delta_theta = omega * dt
 
+        # Update the orientation
+        self.orientation_rad += delta_theta
+
+        # Ensure the orientation is within the range [-pi, pi]
+        self.orientation_rad = (self.orientation_rad + np.pi) % (2 * np.pi) - np.pi
+
         # Estimate the distance traveled
         if omega == 0:
             # Straight movement
-            delta_x = v * dt
-            delta_y = 0
+            delta_x = v * dt * np.cos(self.orientation_rad)
+            delta_y = v * dt * np.sin(self.orientation_rad)
         else:
             # Circular movement
             radius = v / omega
-            delta_x = radius * np.sin(delta_theta)
-            delta_y = radius * (1 - np.cos(delta_theta))
+            delta_x = radius * (np.sin(self.orientation_rad + delta_theta) - np.sin(self.orientation_rad))
+            delta_y = radius * (-np.cos(self.orientation_rad + delta_theta) + np.cos(self.orientation_rad))
 
         return delta_x, delta_y, delta_theta
     
@@ -193,24 +197,6 @@ class Kinematic( Component ):
         print("\n- - - - - - - - - - -\n")
         print("Time since last call:", dt)
         print("Steering:", self.steering.linear_m_s_2, self.steering.angular_rad_s_2)
-        
-        """# update the position and orientation
-        self.position += self.linear_m_s * dt * (0.27/0.2)
-        self.orientation_rad += self.rotation_rad_s * dt"""
-
-        """# update linear_m_s_2 and rotation
-        self.linear_m_s += self.steering.linear_m_s_2 * dt
-        self.rotation_rad_s += self.steering.angular_rad_s_2 * dt
-        
-        # check for speeding and clip
-        velocity_magnitude = np.linalg.norm(self.linear_m_s)
-        if velocity_magnitude > self.max_speed_m_s:
-            self.linear_m_s = get_unit_vector(self.linear_m_s) * self.max_speed_m_s
-
-        # check for rotating and clip
-        if self.rotation_rad_s > self.max_turn_rad_s:
-            self.rotation_rad_s = self.max_turn_rad_s"""
-        
         print("Position:", self.position)
         print("Orientation:", self.orientation_rad)
         print("Velocity:", self.linear_m_s)
@@ -219,18 +205,26 @@ class Kinematic( Component ):
         self.last_call = time.time()
 
         # create and update plotter
-        """if self.verbose: 
-            self.kplot.pass_kinematic_values(self.time_inputs, self.position_inputs, self.velocity_inputs, self.acceleration_inputs,
-                              self.orientation_inputs, self.angular_velocity_inputs, self.angular_acceleration_inputs)"""
+        if True: 
+            
+            self.kplot.add_data_point(
+                time=time.time(),
+                position=self.position,
+                orientation=self.orientation_rad,
+                velocity=self.linear_m_s,
+                angular_velocity=self.rotation_rad_s,
+                acceleration=self.steering.linear_m_s_2,
+                angular_acceleration=self.steering.angular_rad_s_2)
 
     def slam_update( self, state ):
         # update based on slam feedback
         self.position = state[0:2]
         self.orientation_rad = state[2]
 
-        """self.kplot.pass_kinematic_values(slam_time_inputs=time.time(),
-                                    slam_position_inputs=self.position,
-                                slam_orientation_inputs=self.orientation_rad)"""
+        self.kplot.add_data_point(
+                time=time.time(),
+                position=self.position,
+                orientation=self.orientation_rad)
         
         # set a new last estimated timestamp
         self.last_call = time.time()

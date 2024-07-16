@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from IPython.display import clear_output
+import numpy as np
 
 class KinematicsPlotter:
     
@@ -12,104 +12,82 @@ class KinematicsPlotter:
         self.angular_velocity_values = []
         self.acceleration_values = []
         self.angular_acceleration_values = []
-        self.slam_position_values = []  # SLAM position measurements
-        self.slam_orientation_values = []  # SLAM orientation measurements
-        self.slam_time_values = []  # SLAM timestamps
 
-        # Initialize the plots and lines
-        self.fig, self.axs = plt.subplots(2, 3, figsize=(20, 10))  # 2 rows, 3 columns
-        self.line1, = self.axs[0, 0].plot([], [])  # Position x
-        self.line2, = self.axs[0, 0].plot([], [])  # Position y
-        self.line3, = self.axs[0, 1].plot([], [])  # Velocity
-        self.line4, = self.axs[0, 2].plot([], [])  # Acceleration
-        self.line5, = self.axs[1, 0].plot([], [])  # Orientation
-        self.line6, = self.axs[1, 1].plot([], [])  # Angular Velocity
-        self.line7, = self.axs[1, 2].plot([], [])  # Angular Acceleration
-        self.line8, = self.axs[0, 0].plot([], [], 'ro')  # SLAM position x
-        self.line9, = self.axs[0, 0].plot([], [], 'ro')  # SLAM position y
-        self.line10, = self.axs[1, 0].plot([], [], 'ro')  # SLAM orientation
+    def add_data_point(self, time, position=None, orientation=None, velocity=None, angular_velocity=None, acceleration=None, angular_acceleration=None):
+        self.time_values.append(time)
+        self.position_values.append(np.copy(position) if position is not None else (None, None))
+        self.orientation_values.append(orientation if orientation is not None else None)
+        self.velocity_values.append(np.copy(velocity) if velocity is not None else (None, None))
+        self.angular_velocity_values.append(angular_velocity)
+        self.acceleration_values.append(np.copy(acceleration) if acceleration is not None else (None, None))
+        self.angular_acceleration_values.append(angular_acceleration)
+        
+        # Debug prints to check the data being added
+        print(f"Added data point: time={time}, position={position}, orientation={orientation}, velocity={velocity}, angular_velocity={angular_velocity}, acceleration={acceleration}, angular_acceleration={angular_acceleration}")
 
-    def pass_kinematic_values(self, time_inputs=None, position_inputs=None, velocity_inputs=None, acceleration_inputs=None,
-                              orientation_inputs=None, angular_velocity_inputs=None, angular_acceleration_inputs=None,
-                              slam_time_inputs=None, slam_position_inputs=None, slam_orientation_inputs=None):
-        if time_inputs is not None:
-            self.time_values.append(time_inputs)
-        if position_inputs is not None:
-            self.position_values.append(position_inputs)
-        if orientation_inputs is not None:
-            self.orientation_values.append(orientation_inputs)
-        if velocity_inputs is not None:
-            self.velocity_values.append(velocity_inputs)
-        if angular_velocity_inputs is not None:
-            self.angular_velocity_values.append(angular_velocity_inputs)
-        if acceleration_inputs is not None:
-            self.acceleration_values.append(acceleration_inputs)
-        if angular_acceleration_inputs is not None:
-            self.angular_acceleration_values.append(angular_acceleration_inputs)
-        if slam_time_inputs is not None:
-            self.slam_time_values.append(slam_time_inputs)
-        if slam_position_inputs is not None:
-            self.slam_position_values.append(slam_position_inputs)
-        if slam_orientation_inputs is not None:
-            self.slam_orientation_values.append(slam_orientation_inputs)
+    def plot_data(self):
+        fig, axs = plt.subplots(2, 3, figsize=(20, 10))  # 2 rows, 3 columns
+        
+        # Set titles for the plots
+        axs[0, 0].set_title("Position")
+        axs[0, 1].set_title("Velocity")
+        axs[0, 2].set_title("Acceleration")
+        axs[1, 0].set_title("Orientation")
+        axs[1, 1].set_title("Angular Velocity")
+        axs[1, 2].set_title("Angular Acceleration")
 
-    def update_plots(self):
-        # Clear the previous plot
-        clear_output(wait=True)
+        # Set x and y labels
+        axs[0, 0].set_xlabel("Time")
+        axs[0, 0].set_ylabel("Position")
+        axs[0, 1].set_xlabel("Time")
+        axs[0, 1].set_ylabel("Velocity")
+        axs[0, 2].set_xlabel("Time")
+        axs[0, 2].set_ylabel("Acceleration")
+        axs[1, 0].set_xlabel("Time")
+        axs[1, 0].set_ylabel("Orientation")
+        axs[1, 1].set_xlabel("Time")
+        axs[1, 1].set_ylabel("Angular Velocity")
+        axs[1, 2].set_xlabel("Time")
+        axs[1, 2].set_ylabel("Angular Acceleration")
 
-        # Update data
-        if self.position_values:
-            self.line1.set_data(self.time_values, [pos[0] for pos in self.position_values])  # Position x
-            self.line2.set_data(self.time_values, [pos[1] for pos in self.position_values])  # Position y
-        if self.velocity_values:
-            self.line3.set_data(self.time_values, self.velocity_values)
-        if self.acceleration_values:
-            self.line4.set_data(self.time_values, self.acceleration_values)
-        if self.orientation_values:
-            self.line5.set_data(self.time_values, self.orientation_values)
-        if self.angular_velocity_values:
-            self.line6.set_data(self.time_values, self.angular_velocity_values)
-        if self.angular_acceleration_values:
-            self.line7.set_data(self.time_values, self.angular_acceleration_values)
-        if self.slam_position_values:
-            self.line8.set_data(self.slam_time_values, [pos[0] for pos in self.slam_position_values])  # SLAM position x
-            self.line9.set_data(self.slam_time_values, [pos[1] for pos in self.slam_position_values])  # SLAM position y
-        if self.slam_orientation_values:
-            self.line10.set_data(self.slam_time_values, self.slam_orientation_values)
+        # Plot position
+        time_arr = np.array(self.time_values)
+        position_arr = np.array(self.position_values)
+        velocity_arr = np.array(self.velocity_values)
+        acceleration_arr = np.array(self.acceleration_values)
+        
+        axs[0, 0].plot(time_arr, position_arr[:, 0], label="Position x", color='blue')
+        axs[0, 0].plot(time_arr, position_arr[:, 1], label="Position y", color='green')
+        
+        # Plot velocity
+        axs[0, 1].plot(time_arr, velocity_arr[:, 0], label="Velocity x", color='blue')
+        axs[0, 1].plot(time_arr, velocity_arr[:, 1], label="Velocity y", color='green')
+        
+        # Plot acceleration
+        axs[0, 2].plot(time_arr, acceleration_arr[:, 0], label="Acceleration x", color='blue')
+        axs[0, 2].plot(time_arr, acceleration_arr[:, 1], label="Acceleration y", color='green')
+        
+        # Plot orientation
+        axs[1, 0].plot(time_arr, self.orientation_values, label="Orientation", color='blue')
+        
+        # Plot angular velocity
+        axs[1, 1].plot(time_arr, self.angular_velocity_values, label="Angular Velocity", color='blue')
+        
+        # Plot angular acceleration
+        axs[1, 2].plot(time_arr, self.angular_acceleration_values, label="Angular Acceleration", color='blue')
 
-        # Adjust axes limits
-        for ax, values in zip(self.axs.flatten(), [self.position_values, self.velocity_values, self.acceleration_values,
-                                                   self.orientation_values, self.angular_velocity_values, self.angular_acceleration_values,
-                                                   self.slam_position_values, self.slam_orientation_values]):
-            ax.relim()
-            ax.autoscale_view()
+        # Add legends
+        for ax in axs.flat:
+            ax.legend()
 
-        # Set titles and labels
-        self.axs[0, 0].set_title('Position vs Time')
-        self.axs[0, 0].set_xlabel('Time')
-        self.axs[0, 0].set_ylabel('Position')
-
-        self.axs[0, 1].set_title('Velocity vs Time')
-        self.axs[0, 1].set_xlabel('Time')
-        self.axs[0, 1].set_ylabel('Velocity')
-
-        self.axs[0, 2].set_title('Acceleration vs Time')
-        self.axs[0, 2].set_xlabel('Time')
-        self.axs[0, 2].set_ylabel('Acceleration')
-
-        self.axs[1, 0].set_title('Orientation vs Time')
-        self.axs[1, 0].set_xlabel('Time')
-        self.axs[1, 0].set_ylabel('Orientation')
-
-        self.axs[1, 1].set_title('Angular Velocity vs Time')
-        self.axs[1, 1].set_xlabel('Time')
-        self.axs[1, 1].set_ylabel('Angular Velocity')
-
-        self.axs[1, 2].set_title('Angular Acceleration vs Time')
-        self.axs[1, 2].set_xlabel('Time')
-        self.axs[1, 2].set_ylabel('Angular Acceleration')
-
-        # Redraw the plot
         plt.tight_layout()
-        plt.draw()
-        plt.pause(0.01)  # pause for a short period to allow the plot to update
+        plt.show()
+
+    def clear_data(self):
+        self.time_values.clear()
+        self.position_values.clear()
+        self.orientation_values.clear()
+        self.velocity_values.clear()
+        self.angular_velocity_values.clear()
+        self.acceleration_values.clear()
+        self.angular_acceleration_values.clear()
