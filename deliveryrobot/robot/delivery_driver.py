@@ -62,7 +62,7 @@ class DeliveryRobot:
             linear_m_s=np.array([0, 0], dtype=np.float64),
             rotation_rad_s=0.0,
             max_speed_m_s=0.02,
-            max_turn_rad_s=0.005
+            max_turn_rad_s=0.15
         )
         self.target_ai = Kinematic(
             state=np.array([0, 0, 0], dtype=np.float64),
@@ -75,7 +75,7 @@ class DeliveryRobot:
             self.robot_ai,
             self.target_ai,
             max_acceleration_m_s_2=0.01,
-            max_angular_acceleration_m_s_2=0.01,
+            max_angular_acceleration_m_s_2=0.1,
             goal_radius_m=0.05)
         
 
@@ -141,53 +141,37 @@ class DeliveryRobot:
         
         return 1
 
-    def arrive_ai(self, dt, call_time):
-        """# determine steering commands
-        steering = self.movement_ai.Arrive(
-            max_speed_m_s=0.5,
-            target_radius_m=0.010,
-            slow_radius_m=0.050,
-            time_to_target_s=0.5
-        )
+    def arrive_ai(self, dt:float, call_time:float):
 
-        # determine driving parameters
-        v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
-
-        # actuate motors
-        self.robot.left(v_left)
-        self.robot.right(v_right)
-        
-        return steering"""
-        
         # get steering command
         steering = self.movement_ai.arrive.get_steering( call_time )
         
+        # test for finish
         if steering == None:
-            print("here")
+            print("ARRIVED")
             return 0
         else:
             print("steering", steering.linear_m_s_2)
         
         # get and update drive parameters
         v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
-        self.robot.set_motors(v_left, v_right)
-        self.robot_ai.last_call = time.time()
-        print("motor speeds", v_left, v_right)
         
+        # actuate motors
+        self.robot.set_motors(v_left, v_right)
+        
+        self.robot_ai.last_call = time.time()
         return 1
 
-    def align_ai(self, dt: float):
-        # determine steering commands
-        steering = self.movement_ai.Align(
-            max_rotation_rad_s=0.3,
-            target_thresh_rad=0.005,
-            slow_radius_m=0.025,
-            time_to_target_s=0.5
-        )
+    def align_ai(self, dt:float, call_time:float):
+        # get steering command
+        steering = self.movement_ai.align.get_steering( call_time )
         
         # test for finish
         if steering == None:
-            return -1
+            print("ALIGNED")
+            return 0
+        else:
+            print("steering", steering.linear_m_s_2, steering.angular_rad_s_2)
 
         # determine driving parameters
         v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
@@ -195,4 +179,5 @@ class DeliveryRobot:
         # actuate motors
         self.robot.set_motors(v_left, v_right)
         
+        self.robot_ai.last_call = time.time()
         return 1
