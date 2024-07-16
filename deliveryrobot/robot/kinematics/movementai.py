@@ -47,7 +47,7 @@ def get_unit_vector( vector: np.ndarray ):
 
 class SteeringOutput( Component ):
 
-    def __init__( self, linear_m_s_2=[0.0,0.0], angular_rad_s_2=0.):
+    def __init__( self, linear_m_s_2=np.array([0.0,0.0],dtype=np.float64), angular_rad_s_2=0.):
         self.linear_m_s_2 = linear_m_s_2
         self.angular_rad_s_2 = angular_rad_s_2
 
@@ -61,56 +61,21 @@ class Kinematic( Component ):
                  max_speed_m_s: float,
                  max_turn_rad_s: float ):
         
-        position, orientation_rad = state[0:2], state[2]    # convert from [x, y, psi]
+        position, orientation_rad = state[0:2].astype(np.float64), state[2]    # convert from [x, y, psi]
 
 
-        self.kplot = KinematicsPlotter()
+        #self.kplot = KinematicsPlotter()
+        print("created")
         self.position = position                            # [x, y]
         self.orientation_rad = orientation_rad              # float value
-        self.linear_m_s = linear_m_s                        # [x', y']
+        self.linear_m_s = linear_m_s.astype(np.float64)                        # [x', y']
         self.rotation_rad_s = rotation_rad_s
         self.max_speed_m_s = max_speed_m_s
         self.max_turn_rad_s = max_turn_rad_s
-
-
-    def estimate_update( self, steering: SteeringOutput, time: float ):
-        # TODO Implementation: tally time between movement commands and pass as time with last steering command
-        # this should make it so it will estimate the relative time since the last move and all subsequent
-        # calculations can be made effectively
-
-        if steering == None:
-            return
-        
-        # update the position and orientation
-        self.position += self.linear_m_s_2 * time
-        self.orientation_rad += self.rotation_rad_s * time
-
-        # update linear_m_s_2 and rotation
-        self.linear_m_s_2 += steering.linear_m_s_2 * time
-        self.rotation_rad_s += steering.angular_rad_s_2 * time
-
-        # check for speeding and clip
-        velocity_magnitude = np.linalg.norm(self.linear_m_s_2)
-        if velocity_magnitude > self.max_speed_m_s:
-            self.linear_m_s_2 = get_unit_vector(self.linear_m_s_2) * self.max_speed_m_s
-
-        # check for rotating and clip
-        if self.rotation_rad_s > self.max_turn_rad_s:
-            self.rotation_rad_s = self.max_turn_rad_s
-
-        # create and update plotter
-        if self.verbose: 
-            self.kplot.pass_kinematic_values(self.time_inputs, self.position_inputs, self.velocity_inputs, self.acceleration_inputs,
-                              self.orientation_inputs, self.angular_velocity_inputs, self.angular_acceleration_inputs)
-
-    def slam_update( self, state ):
-        # update based on slam feedback
-        self.position = state[0:2]
-        self.orientation_rad = state[2]
-
-        self.kplot.pass_kinematic_values(slam_time_inputs=time.time(),
-                                    slam_position_inputs=self.position,
-                                slam_orientation_inputs=self.orientation_rad)
+        self.steering = SteeringOutput()
+        self.last_call = time.time()                        # timestamp representing last estimated state
+        self.wheel_velocities = np.array([0.,0.],dtype=np.float64)
+        self.min_wheel_velocity_m_s = 0.05
 
     def new_orientation( self, current: float, velocity: np.ndarray ):
         # ensure velocity
@@ -121,47 +86,154 @@ class Kinematic( Component ):
             return current
 
     def get_velocity_vector( self, linear_m_s_2: np.ndarray, angular_rad_s_2: float, dt: float ):
+        # get and update velocity for kinematic object
+        
         # calculate desired velocity vectors
         vx_desired = self.linear_m_s[0] + linear_m_s_2[0] * dt
         vy_desired = self.linear_m_s[1] + linear_m_s_2[1] * dt
-        self.linear_m_s = [vx_desired, vy_desired]
+        
+        # bottom limit
+        if vx_desired < 1e-5: vx_desired = 0
+        if vy_desired < 1e-5: vy_desired = 0
+        
+        # check for speeding and clip
+        velocity = np.array([vx_desired, vy_desired], dtype=np.float64)
+        velocity_magnitude = np.linalg.norm(velocity)
+    
+        print(f"{velocity_magnitude} > {self.max_speed_m_s}")
+        # update to capped speed if over maximum velocity
+        if velocity_magnitude > self.max_speed_m_s:
+            print(f"FAILED: {get_unit_vector(velocity)} * {self.max_speed_m_s}")
+            self.linear_m_s = get_unit_vector(velocity) * self.max_speed_m_s
+        else:
+            self.linear_m_s = np.array([vx_desired, vy_desired], dtype=np.float64)
+            
+            
+        print("chosen velocities", self.linear_m_s)
 
         # calculate angle between current velocity and desired velocity
         current_heading = self.orientation_rad
         desired_heading = math.atan2(vy_desired, vx_desired)
         angle_diff = desired_heading - current_heading
-        
-        print(current_heading)
-        print(desired_heading)
-        print(angle_diff)
 
         # calculate desired magnitudes
         velocity_desired = math.sqrt(vx_desired ** 2 + vy_desired ** 2)
         omega_desired = angle_diff / dt
         self.rotation_rad_s = max(min(omega_desired, self.max_turn_rad_s), -self.max_turn_rad_s)
+                
+        print("omega", self.rotation_rad_s)
 
         return velocity_desired, omega_desired
         
-    def get_wheel_velocities( self, v: float, omega: float, dt: float, L=0.120, r=0.065 ):
+    def get_wheel_velocities( self, v: float, omega: float, L=0.120, r=0.065 ):
         # based on DDR inverse kinematics equations
         phi_dot_l = (v - (L / 2) * omega) / r
         phi_dot_r = (v + (L / 2) * omega) / r
         
-        velocities = np.array([phi_dot_l, phi_dot_r])
+        self.wheel_velocities = np.array([phi_dot_l, phi_dot_r])
         
-        if any(filter(lambda x: x > 0.2, velocities)):
-            velocities = get_unit_vector(velocities) * 0.2
-        
-        return phi_dot_l, phi_dot_r
+        return self.wheel_velocities
     
-    def get_drive_params( self, steering: SteeringOutput, dt:float ):
-        velocity, omega = self.get_velocity_vector(steering.linear_m_s_2, steering.angular_rad_s_2, dt)
-        print(steering.linear_m_s_2, steering.angular_rad_s_2)
-        v_l, v_r = self.get_wheel_velocities(velocity, omega, dt)
+    def bias_correction( self, v_l, v_r ):
         
-        
+        v_l = 1.03 * v_r
         
         return v_l, v_r
+    
+    def get_drive_params( self, steering: SteeringOutput, dt: float ):
+        velocity, omega = self.get_velocity_vector(steering.linear_m_s_2, steering.angular_rad_s_2, dt)
+        v_l, v_r = self.get_wheel_velocities(velocity, omega)
+        v_l, v_r = self.bias_correction(v_l, v_r)
+        
+        return v_l, v_r
+    
+    def estimate_distance_traveled( self, dt: float, L=0.120 ):
+        
+        v_l, v_r = self.wheel_velocities
+        
+        # Calculate linear and angular velocities
+        v = (v_r + v_l) / 2
+        omega = (v_r - v_l) / L
+
+        # Calculate the change in bearing
+        delta_theta = omega * dt
+
+        # Estimate the distance traveled
+        if omega == 0:
+            # Straight movement
+            delta_x = v * dt
+            delta_y = 0
+        else:
+            # Circular movement
+            radius = v / omega
+            delta_x = radius * np.sin(delta_theta)
+            delta_y = radius * (1 - np.cos(delta_theta))
+
+        return delta_x, delta_y, delta_theta
+    
+    def estimate_update( self, call_time: float ):
+        # TODO Implementation: tally time between movement commands and pass as time with last steering command
+        # this should make it so it will estimate the relative time since the last move and all subsequent
+        # calculations can be made effectively
+
+        if self.steering == None:
+            return
+        
+        # get dt from last call
+        dt = call_time
+        
+        # estimate the distances traveled
+        delta_x, delta_y, delta_theta = self.estimate_distance_traveled(dt)
+        
+        self.position += np.array([delta_x, delta_y]) * (0.27/0.2)   # with estimated error ratio (opportunity for RL)
+        self.orientation_rad += delta_theta
+        
+        print("distances",delta_x, delta_y, "over", dt)
+        
+        print("\n- - - - - - - - - - -\n")
+        print("Time since last call:", dt)
+        print("Steering:", self.steering.linear_m_s_2, self.steering.angular_rad_s_2)
+        
+        """# update the position and orientation
+        self.position += self.linear_m_s * dt * (0.27/0.2)
+        self.orientation_rad += self.rotation_rad_s * dt"""
+
+        """# update linear_m_s_2 and rotation
+        self.linear_m_s += self.steering.linear_m_s_2 * dt
+        self.rotation_rad_s += self.steering.angular_rad_s_2 * dt
+        
+        # check for speeding and clip
+        velocity_magnitude = np.linalg.norm(self.linear_m_s)
+        if velocity_magnitude > self.max_speed_m_s:
+            self.linear_m_s = get_unit_vector(self.linear_m_s) * self.max_speed_m_s
+
+        # check for rotating and clip
+        if self.rotation_rad_s > self.max_turn_rad_s:
+            self.rotation_rad_s = self.max_turn_rad_s"""
+        
+        print("Position:", self.position)
+        print("Orientation:", self.orientation_rad)
+        print("Velocity:", self.linear_m_s)
+        print("Rotation Vel:", self.rotation_rad_s)
+        
+        self.last_call = time.time()
+
+        # create and update plotter
+        """if self.verbose: 
+            self.kplot.pass_kinematic_values(self.time_inputs, self.position_inputs, self.velocity_inputs, self.acceleration_inputs,
+                              self.orientation_inputs, self.angular_velocity_inputs, self.angular_acceleration_inputs)"""
+
+    def slam_update( self, state ):
+        # update based on slam feedback
+        self.position = state[0:2]
+        self.orientation_rad = state[2]
+
+        """self.kplot.pass_kinematic_values(slam_time_inputs=time.time(),
+                                    slam_position_inputs=self.position,
+                                slam_orientation_inputs=self.orientation_rad)"""
+        
+        # set a new last estimated timestamp
+        self.last_call = time.time()
 
 class Path( Component ):
     # hold the path for where the robot will move
@@ -191,7 +263,7 @@ class MovementAI( Component ):
         self.goal_radius_m = goal_radius_m
         
         # behavior initialization
-        self.arrive = self.Arrive(self, max_speed_m_s=self.robot.max_speed_m_s * 0.5, target_radius_m=0.1, slow_radius_m=0.5)
+        self.arrive = self.Arrive(self, max_speed_m_s=self.robot.max_speed_m_s, target_radius_m=0.005, slow_radius_m=0.05)
         self.align = self.Align(self, max_rotation_rad_s=self.robot.max_turn_rad_s, target_thresh_rad=0.1, slow_radius_m=0.5)
         self.path = Path([])
         self.path_following = self.PathFollowing(self, path=self.path, path_point_radius_m=0.2)
@@ -211,6 +283,9 @@ class MovementAI( Component ):
             result.linear_m_s_2 = get_unit_vector(result.linear_m_s_2) * self.outer_instance.max_acceleration_m_s_2
 
             result.angular_rad_s_2 = 0
+            
+            self.outer_instance.robot.steering = result
+            
             return result
 
     class Arrive( Component ):
@@ -228,8 +303,11 @@ class MovementAI( Component ):
 
             self.max_acceleration_m_s_2 = self.outer_instance.max_acceleration_m_s_2 / 2
 
-        def get_steering( self ) -> SteeringOutput:
+        def get_steering( self, call_time:float ) -> SteeringOutput:
             result = SteeringOutput()
+
+            # update estimate of position
+            self.outer_instance.robot.estimate_update( call_time )
 
             # get direction to target
             direction = self.outer_instance.target.position - self.outer_instance.robot.position
@@ -237,6 +315,7 @@ class MovementAI( Component ):
 
             # check if there, return no steering
             if distance < self.target_radius_m:
+                print("---------HERE---------")
                 return None
             
             # if we are outside the slow_radius_m, then move at max speed
@@ -248,16 +327,22 @@ class MovementAI( Component ):
             # the target velocity combines speed and direction
             target_velocity = direction
             target_velocity = get_unit_vector(target_velocity) * target_speed
+            
+            print("target_velocity", target_velocity)
 
             # acceleration tries to get to the target velocity
-            result.linear_m_s_2 = target_velocity - self.outer_instance.robot.linear_m_s_2
+            result.linear_m_s_2 = target_velocity - self.outer_instance.robot.linear_m_s
             result.linear_m_s_2 /= self.time_to_target_s
 
             # check if the acceleration is too fast
-            if result.linear_m_s_2 > self.max_acceleration_m_s_2:
+            if np.linalg.norm(result.linear_m_s_2) > self.max_acceleration_m_s_2:
                 result.linear_m_s_2 = get_unit_vector(result.linear_m_s_2) * self.max_acceleration_m_s_2
+            
 
             result.angular = 0
+
+            self.outer_instance.robot.steering = result
+
             return result
         
     class Align ( Component ):
@@ -276,8 +361,11 @@ class MovementAI( Component ):
 
             self.max_angular_acceleration_m_s_2 = self.outer_instance.max_angular_acceleration_m_s_2 / 2
 
-        def get_steering( self ) -> SteeringOutput:
+        def get_steering( self, call_time:float ) -> SteeringOutput:
             result = SteeringOutput()
+
+            # update estimate of position
+            self.outer_instance.robot.estimate_update( call_time )
             
             # get the naive direction to the target
             rotation = self.outer_instance.target.orientation_rad - self.outer_instance.robot.orientation_rad
@@ -308,10 +396,11 @@ class MovementAI( Component ):
                 result.angular_rad_s_2 *= self.max_angular_acceleration_m_s_2
 
             result.linear_m_s_2 = 0
+
+            self.outer_instance.robot.steering = result
+
             return result
         
-
-
     class PathFollowing( Seek ):
         def __init__( self,
                      outer_instance,
@@ -321,6 +410,10 @@ class MovementAI( Component ):
             self.path_point_radius_m = path_point_radius_m
 
         def get_steering( self ) -> SteeringOutput:
+            
+            # update estimate of position
+            self.outer_instance.robot.estimate_update()
+            
             # check if position is close enough to goal
             distance_to_goal_m = abs(self.outer_instance.target.position - self.outer_instance.robot.position)
             if np.linalg.norm(distance_to_goal_m) < self.path_point_radius_m:
