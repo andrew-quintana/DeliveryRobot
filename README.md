@@ -1,6 +1,6 @@
 # DeliveryRobot
 ## Current State as of 07/22/2024
-I have tested basic serial integration, which involves the following steps: picture taken, pose estimation, SLAM estimation, Astar path planning, automated acceleration vector generation to approach goal.<br>
+I have tested basic serial integration, which involves the following steps: picture taken, pose estimation, SLAM estimation, Astar path planning, automated acceleration vector generation to follow the path then arrive at the goal goal.<br>
 [![Watch the video](https://img.youtube.com/vi/7LRzWPnWU2A/hqdefault.jpg)](https://youtu.be/7LRzWPnWU2A)
 
 ## Summary
