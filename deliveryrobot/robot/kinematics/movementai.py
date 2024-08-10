@@ -33,7 +33,7 @@ Robotics {book}: https://www.roboticsbook.org/S52_diffdrive_actions.html
 """
 from typing import List, Tuple
 from .kinematics_plotting import KinematicsPlotter
-from .pid import PIDController
+#from .pid import PIDController
 import math
 import time
 import numpy as np
@@ -148,14 +148,14 @@ class Kinematic( Component ):
     
     def bias_correction( self, v_l, v_r ):
         
-        v_l = 1.03 * v_l
+        v_r *= 1.03
         
         return v_l, v_r
     
     def get_drive_params( self, steering: SteeringOutput, dt: float ):
         velocity, omega = self.get_velocity_vector(steering.linear_m_s_2, steering.angular_rad_s_2, dt)
         v_l, v_r = self.get_wheel_velocities(velocity, omega)
-        v_l, v_r = self.bias_correction(v_l, v_r)
+        #v_l, v_r = self.bias_correction(v_l, v_r)
         
         logging.debug(f"wheel velocities: {v_l}, {v_r}")
         
@@ -228,6 +228,8 @@ class Kinematic( Component ):
                 angular_velocity=self.rotation_rad_s,
                 acceleration=self.steering.linear_m_s_2,
                 angular_acceleration=self.steering.angular_rad_s_2)
+            
+        return delta_x, delta_y, delta_theta
 
     def slam_update( self, state ):
         # update based on slam feedback
@@ -307,7 +309,7 @@ class MovementAI( Component ):
             result = SteeringOutput()
 
             # update estimate of position
-            self.outer_instance.robot.estimate_update( call_time )
+            delta_x, delta_y, delta_theta = self.outer_instance.robot.estimate_update( call_time )
 
             # get direction to target
             direction = self.outer_instance.target.position - self.outer_instance.robot.position
@@ -316,7 +318,7 @@ class MovementAI( Component ):
             # check if there, return no steering
             if distance < self.target_radius_m:
                 logging.debug("---------HERE---------")
-                return None
+                return [None, delta_x, delta_y, delta_theta]
             
             # if we are outside the slow_radius_m, then move at max speed
             if distance > self.slow_radius_m:
@@ -352,7 +354,7 @@ class MovementAI( Component ):
 
             self.outer_instance.robot.steering = result
 
-            return result
+            return [result, delta_x, delta_y, delta_theta]
         
     class Align ( Component ):
         def __init__( self,
@@ -372,7 +374,7 @@ class MovementAI( Component ):
             result = SteeringOutput()
 
             # update estimate of position
-            self.outer_instance.robot.estimate_update( call_time )
+            delta_x, delta_y, delta_theta = self.outer_instance.robot.estimate_update( call_time )
             
             # get the naive direction to the target
             rotation = self.outer_instance.target.orientation_rad - self.outer_instance.robot.orientation_rad
@@ -383,7 +385,7 @@ class MovementAI( Component ):
 
             # check if we are there, return no steering
             if rotation_size < self.target_thresh_rad:
-                return None
+                return [None, delta_x, delta_y, delta_theta]
             
             # if we are outside the slow_radius_m, then use maximum rotation
             if rotation_size > self.slow_radius_m:
@@ -410,13 +412,13 @@ class MovementAI( Component ):
 
             self.outer_instance.robot.steering = result
 
-            return result
+            return [result, delta_x, delta_y, delta_theta]
         
     class Seek( Component ):
         def __init__(self, outer_instance):
             self.outer_instance = outer_instance
             
-        def get_steering( self ) -> SteeringOutput:
+        def get_steering( self, delta_x, delta_y, delta_theta ) -> SteeringOutput:
 
             result = SteeringOutput()
 
@@ -440,7 +442,7 @@ class MovementAI( Component ):
             
             self.outer_instance.robot.steering = result
             
-            return result
+            return [result, delta_x, delta_y, delta_theta]
         
     class PathFollowing( Seek ):
         def __init__( self,
@@ -453,7 +455,7 @@ class MovementAI( Component ):
             # TODO FSM Design: once path is going for path[-1], set target to goal_state
             
             # update estimate of position
-            self.outer_instance.robot.estimate_update(call_time)
+            delta_x, delta_y, delta_theta = self.outer_instance.robot.estimate_update(call_time)
             
             # check if position is close enough to next path point
             next_state = self.outer_instance.path.states[self.outer_instance.path.next_idx]
@@ -465,11 +467,13 @@ class MovementAI( Component ):
             # check if the next path node is the final one, report completion
             if self.outer_instance.path.next_idx == len(self.outer_instance.path.states) - 1:
                 # do not set next path point to avoid combining A* and MovementAI goal tolerances
-                return None
+                return [None, delta_x, delta_y, delta_theta]
 
             # set next path point as target position
             self.outer_instance.target.position = self.outer_instance.path.states[self.outer_instance.path.next_idx][0:2]
             self.outer_instance.target.orientation_rad = self.outer_instance.path.states[self.outer_instance.path.next_idx][2]
 
             # delegate to seek
-            return super().get_steering()
+            output = super().get_steering(delta_x, delta_y, delta_theta)
+            print(output)
+            return output

@@ -55,7 +55,7 @@ def euclidian( state1, state2 ):
 
 def relative_angle( u, v ):
     """
-    calculates the angle (in radians) between two n-dimensional vectors.
+    calculates the angle (in radians) between two 2-dimensional vectors.
     
     Args:
         u (np.ndarray): The first vector.

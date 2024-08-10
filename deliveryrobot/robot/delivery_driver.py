@@ -119,13 +119,14 @@ class DeliveryRobot:
         self.movement_ai.path.update_path(path)
 
     def path_follow_ai(self, dt: float, call_time:float ):
+        
         # get steering command
-        steering = self.movement_ai.path_following.get_steering( call_time )
+        steering, delta_x, delta_y, delta_theta = self.movement_ai.path_following.get_steering( call_time )
         
         # test for finish
         if steering == None:
             print("PATH COMPLETE, ARRIVING")
-            return 0
+            return [0, delta_x, delta_y, delta_theta]
         else:
             print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
         
@@ -136,17 +137,18 @@ class DeliveryRobot:
         self.robot.set_motors(v_left, v_right)
         
         self.robot_ai.last_call = time.time()
-        return 1
+        
+        return [1, delta_x, delta_y, delta_theta]
 
     def arrive_ai(self, dt:float, call_time:float):
 
         # get steering command
-        steering = self.movement_ai.arrive.get_steering( call_time )
+        steering, delta_x, delta_y, delta_theta = self.movement_ai.arrive.get_steering( call_time )
         
         # test for finish
         if steering == None:
             print("ARRIVED")
-            return 0
+            return [0, delta_x, delta_y, delta_theta]
         else:
             print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
         
@@ -157,16 +159,18 @@ class DeliveryRobot:
         self.robot.set_motors(v_left, v_right)
         
         self.robot_ai.last_call = time.time()
-        return 1
+        
+        return [1, delta_x, delta_y, delta_theta]
 
     def align_ai(self, dt:float, call_time:float):
+        
         # get steering command
-        steering = self.movement_ai.align.get_steering( call_time )
+        steering, delta_x, delta_y, delta_theta = self.movement_ai.align.get_steering( call_time )
         
         # test for finish
         if steering == None:
             print("ALIGNED")
-            return 0
+            return [0, delta_x, delta_y, delta_theta]
         else:
             print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
 
@@ -177,4 +181,5 @@ class DeliveryRobot:
         self.robot.set_motors(v_left, v_right)
         
         self.robot_ai.last_call = time.time()
-        return 1
+        
+        return [1, delta_x, delta_y, delta_theta]
