@@ -6,19 +6,30 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-[Usage Description]
+Path planning based on Astar and Beam Search algorithms.
 
 Classes:
-[Class descriptions]
+    Graph: local graph datatype
+        add_vertex(): add vertex to graph
+        add_edge(): add edge to graph
+        get_vertex_properties(): get information about vertex
+        clear(): clear graph
+    Astar: contains algorithms for beam search and astar
+        reset(): reset/delete relevant inputs and outputs for algorithm
+        add_vertex(): execute vertex addition
+        plot_map(): show the map based on updated mapper
+        astar_move(): determine path based on current information
+        beam_search(): investigate opportunities for movement based on beam or
+            whisker methodology
+            - actual astar implementation WITH beam search incorporated
 
 Functions:
-[Provide a list of functions in the module/package with a brief description of each]
-
-Attributes:
-[Provide a list of attributes in the module/package with a brief description of each]
+    hueristic(): calculate value to determine risk weight
 
 Dependencies:
-[Provide a list of external dependencies required by the module/package]
+    utilities.py
+    computational_geomtry.py
+    mapper.py
 
 License:
 [Include the full text of the license you have chosen for your code]

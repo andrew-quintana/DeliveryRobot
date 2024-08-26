@@ -6,19 +6,29 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-[Usage Description]
+Setup the Jetbot and prepare movement functionality.
 
 Classes:
-[Class descriptions]
-
-Functions:
-[Provide a list of functions in the module/package with a brief description of each]
-
-Attributes:
-[Provide a list of attributes in the module/package with a brief description of each]
+    DeliveryRobot: all functionality for the jetbot for this project's utility.
+        take_picture(): take an image and return its location
+        stop(): stop the robot's movement
+        step_forward(): step forward a specific amount of time
+        step_backward(): step backward a specific amount of time
+        step_left(): step left a specific amount of time
+        step_right(): step right a specific amount of time
+        slam_update_ai(): supports updating state information for acceleration vector
+            calculating algorithms
+        update_path_ai(): updates path for path following movement
+        path_follow_ai(): path following movement execution
+        arrive_ai(): arrival movement execution
+        align_ai(): align movement execution
 
 Dependencies:
-[Provide a list of external dependencies required by the module/package]
+    movementai.py
+    utilities.py
+    jetbot
+        Robot.py
+        Camera.py
 
 License:
 [Include the full text of the license you have chosen for your code]
@@ -119,7 +129,31 @@ class DeliveryRobot:
         self.movement_ai.path.update_path(path)
 
     def path_follow_ai(self, dt: float, call_time:float ):
+<<<<<<< HEAD
         
+=======
+        # get steering command
+        steering = self.movement_ai.path_following.get_steering( call_time )
+        
+        # test for finish
+        if steering == None:
+            print("PATH COMPLETE, ARRIVING")
+            return 0
+        else:
+            print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
+        
+        # get and update drive parameters
+        v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
+        
+        # actuate motors
+        self.robot.set_motors(v_left, v_right)
+        
+        self.robot_ai.last_call = time.time()
+        return 1
+
+    def arrive_ai(self, dt:float, call_time:float):
+
+>>>>>>> 8390973c0df02bf66cf1a728126322ce61e9c615
         # get steering command
         steering, delta_x, delta_y, delta_theta = self.movement_ai.path_following.get_steering( call_time )
         

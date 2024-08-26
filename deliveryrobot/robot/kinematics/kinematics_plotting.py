@@ -1,7 +1,40 @@
+"""
+
+Author: Andrew Quintana
+Email: aquintana7@gatech.edu
+Version: 0.1.0
+License: [License Name]
+
+Usage:
+Pass the KinematicsPlotter your iterative state updates to create visual depictions of your system's movement.
+
+Classes & Functions:
+    KinematicsPlotter: enables ability to save and update kinematics data for plotting
+        add_data_point(): add data ponts from each iteration to build datasets for plotting
+        plot_data(): plot iterative state information
+        clear_data(): reset data and start again
+
+Dependencies:
+    utilities.py
+
+License:
+[Include the full text of the license you have chosen for your code]
+
+Examples:
+[Provide some example code snippets demonstrating how to use the module/package]
+
+Sources:
+
+"""
+
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-class KinematicsPlotter:
+sys.path.append("../../deliveryrobot")
+from utilities.utilities import *
+
+class KinematicsPlotter( Component ):
     
     def __init__(self):
         # Initialize empty lists to store values

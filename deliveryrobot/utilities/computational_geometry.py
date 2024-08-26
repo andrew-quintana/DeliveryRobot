@@ -6,19 +6,27 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-[Usage Description]
-
-Classes:
-[Class descriptions]
+    Calculations for gaining spatial understanding.
 
 Functions:
-[Provide a list of functions in the module/package with a brief description of each]
-
-Attributes:
-[Provide a list of attributes in the module/package with a brief description of each]
+    euclidian(): determine euclidian distance
+    relative_angle(): determine relative angle
+    normalize_angle(): normalize the angle between [-pi,pi)
+    collinear(): Determines whether or not the three position vectors are collinear
+    distance_point_to_segment(): Calculate the distance between a point and a line segment.
+    intersects(): determine whether or not line ab intersects with line cd
+    generate_visibility_points(): Get the visibility point from a vertex and neighboring points
+    left(): function to check if point c is on the left of line segment ab
+    left_on(): function to check if point c is on the left of line segment ab or on it
+    left_math(): math for determining left-related calculations
+    test_edge(): Determine if a line segment is valid, i.e., not too close to obstacles and
+        not intersecting any obstacles.
+    test_node(): Determine if a node is within the environment and not too close to the boundary or obstacles.
+    visibility_point(): Get the visibility point from a vertex and neighboring points
+    xprod(): function to compute cross product of ab and ac
 
 Dependencies:
-[Provide a list of external dependencies required by the module/package]
+    utilities.py
 
 License:
 [Include the full text of the license you have chosen for your code]

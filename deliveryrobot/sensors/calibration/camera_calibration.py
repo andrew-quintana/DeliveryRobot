@@ -6,26 +6,19 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-[Usage Description]
-https://medium.com/@kennethjiang/calibrate-fisheye-lens-using-opencv-333b05afa0b0
-
-Classes:
-[Class descriptions]
+Calibrate fisheye camera and write camera calibration xml file.
 
 Functions:
-[Provide a list of functions in the module/package with a brief description of each]
-
-Attributes:
-[Provide a list of attributes in the module/package with a brief description of each]
-
-Dependencies:
-[Provide a list of external dependencies required by the module/package]
+    calibrate_fisheye_checkerboard(): calibrate based on directory with checkerboard images
 
 License:
 [Include the full text of the license you have chosen for your code]
 
 Examples:
 [Provide some example code snippets demonstrating how to use the module/package]
+
+Sources:
+    https://medium.com/@kennethjiang/calibrate-fisheye-lens-using-opencv-333b05afa0b0
 
 """
 

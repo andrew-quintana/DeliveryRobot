@@ -6,19 +6,17 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-[Usage Description]
+Use OnlineSlam algorithm for localization and mapping.
 
 Classes:
-[Class descriptions]
-
-Functions:
-[Provide a list of functions in the module/package with a brief description of each]
-
-Attributes:
-[Provide a list of attributes in the module/package with a brief description of each]
+    OnlineSlam: houses attributes and functions for algorithm
+        get_map(): get map externally
+        process_measurements(): process information from sensor readings
+        process_movement(): process movement from sensors or estimate
+        map_update(): update map based on class matrices and algorithm linear algebra
 
 Dependencies:
-[Provide a list of external dependencies required by the module/package]
+    utilities.py
 
 License:
 [Include the full text of the license you have chosen for your code]
