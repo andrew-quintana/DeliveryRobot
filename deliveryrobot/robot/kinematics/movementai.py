@@ -335,11 +335,7 @@ class MovementAI( Component ):
             # check if there, return no steering
             if distance < self.target_radius_m:
                 logging.debug("---------HERE---------")
-<<<<<<< HEAD
                 return [None, delta_x, delta_y, delta_theta]
-=======
-                return None
->>>>>>> 8390973c0df02bf66cf1a728126322ce61e9c615
             
             # if we are outside the slow_radius_m, then move at max speed
             if distance > self.slow_radius_m:
@@ -506,11 +502,7 @@ class MovementAI( Component ):
             # TODO FSM Design: once path is going for path[-1], set target to goal_state
             
             # update estimate of position
-<<<<<<< HEAD
             delta_x, delta_y, delta_theta = self.outer_instance.robot.estimate_update(call_time)
-=======
-            self.outer_instance.robot.estimate_update(call_time)
->>>>>>> 8390973c0df02bf66cf1a728126322ce61e9c615
             
             # check if position is close enough to next path point
             next_state = self.outer_instance.path.states[self.outer_instance.path.next_idx]
@@ -522,11 +514,7 @@ class MovementAI( Component ):
             # check if the next path node is the final one, report completion
             if self.outer_instance.path.next_idx == len(self.outer_instance.path.states) - 1:
                 # do not set next path point to avoid combining A* and MovementAI goal tolerances
-<<<<<<< HEAD
                 return [None, delta_x, delta_y, delta_theta]
-=======
-                return None
->>>>>>> 8390973c0df02bf66cf1a728126322ce61e9c615
 
             # set next path point as target position
             self.outer_instance.target.position = self.outer_instance.path.states[self.outer_instance.path.next_idx][0:2]

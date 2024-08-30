@@ -129,31 +129,7 @@ class DeliveryRobot:
         self.movement_ai.path.update_path(path)
 
     def path_follow_ai(self, dt: float, call_time:float ):
-<<<<<<< HEAD
         
-=======
-        # get steering command
-        steering = self.movement_ai.path_following.get_steering( call_time )
-        
-        # test for finish
-        if steering == None:
-            print("PATH COMPLETE, ARRIVING")
-            return 0
-        else:
-            print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
-        
-        # get and update drive parameters
-        v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
-        
-        # actuate motors
-        self.robot.set_motors(v_left, v_right)
-        
-        self.robot_ai.last_call = time.time()
-        return 1
-
-    def arrive_ai(self, dt:float, call_time:float):
-
->>>>>>> 8390973c0df02bf66cf1a728126322ce61e9c615
         # get steering command
         steering, delta_x, delta_y, delta_theta = self.movement_ai.path_following.get_steering( call_time )
         

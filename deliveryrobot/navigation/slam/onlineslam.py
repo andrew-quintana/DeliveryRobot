@@ -50,17 +50,26 @@ class OnlineSLAM( Component ):
         self.dim = dim
 
         # environment information
-        self.map = {"ROBOT": np.array([70., -220., 8.])}     # tracks all states
-        self.landmarks = {"ROBOT": 0}                               # tracks indices in array
+        self.map = {"ROBOT": np.array([0., 0., 0.])}        # tracks all states
+        self.landmarks = {"ROBOT": 0}                       # tracks indices in array
+        self.world_frame_idx = -1
 
     def get_map( self ):
         """
         Returns:
             dict(str, ndarray): map of all of the states in the environment
-
         """
 
         return self.map
+    
+    def set_world_frame( self, world_frame_idx: int ):
+        """
+        
+        Args:
+            world_frame (int): index of the world frame for mapping wrt a specific landmark
+        """
+
+        self.world_frame_idx = world_frame_idx
     
     def process_measurements( self, measurements ):
         """
@@ -72,6 +81,7 @@ class OnlineSLAM( Component ):
         """
 
         if self.debug: print("MEASUREMENTS PROCESSING")
+
         for key in measurements:
 
             # do not include robot location
@@ -145,6 +155,9 @@ class OnlineSLAM( Component ):
         """
         update map based on processing of class matrices
 
+        Args:
+            
+
         """
 
         if self.debug: print("MAPPING UPDATE")
@@ -166,6 +179,21 @@ class OnlineSLAM( Component ):
         # determine mu
         self.mu = np.matmul(inv(self.Omega), self.Xi)
         if self.debug: print(f"Calculated mu as:\n{self.mu}")
+
+        # world frame map update
+        if self.world_frame_idx != -1:
+
+            # get the world frame state
+            self.world_frame_state = self.mu[0,
+                                             self.world_frame_idx * self.dim : 
+                                             self.world_frame_idx * self.dim + 2]
+
+            # get an array to offset the current map
+            repetitions = self.mu.shape[0] // self.world_frame_state.shape[0]
+            self.world_frame_offset = np.tile(self.world_frame_state, (repetitions, 1))
+
+            # update mu based on world frame state
+            self.mu -= self.world_frame_offset
 
         # map update
         for key in self.landmarks:
