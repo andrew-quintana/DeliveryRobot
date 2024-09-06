@@ -6,36 +6,19 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-Estimate dead reckoning and compute acceleration vectors for entity based on targets.
+[Usage Description]
 
 Classes:
-    SteeringOutput: accleration information
-    Kinematic: dynamic entity to be tracked with dead reckoning
-        get_velocity_vector(): get and update velocity for kinematic object
-        get_wheel_velocities(): calculate wheel velocities based on desired linear and
-            radial velocity
-        bias_correction(): calculator for wheel biases
-        get_drive_params(): execute steps involved in getting the drive parameters
-        estimate_distance_traveled(): estimate how far the entity traveled since the
-            last function call
-        estimate_update(): estimate the dead reckoning state
-        slam_update(): method of contributing external mapping information for localization
-    Path: path information
-        update_path(): update the path and prepare for path following functionality
-    MovementAI: higher level acceleration vector determination
-        Arrive: approach the target and slow down to avoid missing
-        Align: change the orientation to correspond with one desired
-        Seek: move toward a point in space
-        PathFollowing: move toward a sequence of points in space
-            - extends Seek
+[Class descriptions]
 
 Functions:
-    get_unit_vector(): calculate the unit vector
+[Provide a list of functions in the module/package with a brief description of each]
+
+Attributes:
+[Provide a list of attributes in the module/package with a brief description of each]
 
 Dependencies:
-    utilities.py
-    computational_geometry.py
-    kinematics_plotting.py
+[Provide a list of external dependencies required by the module/package]
 
 License:
 [Include the full text of the license you have chosen for your code]
@@ -460,36 +443,6 @@ class MovementAI( Component ):
             self.outer_instance.robot.steering = result
             
             return [result, delta_x, delta_y, delta_theta]
-        
-    class Seek( Component ):
-        def __init__(self, outer_instance):
-            self.outer_instance = outer_instance
-            
-        def get_steering( self ) -> SteeringOutput:
-
-            result = SteeringOutput()
-
-            # get the direction to the target
-            result.linear_m_s_2 = self.outer_instance.target.position - self.outer_instance.robot.position
-            
-            # the velocity is along this direction, at full speed
-            result.linear_m_s_2 = get_unit_vector(result.linear_m_s_2) * self.outer_instance.max_acceleration_m_s_2
-
-            # Induced Angular Acceleration
-            target_orientation = math.atan2(result.linear_m_s_2[1], result.linear_m_s_2[0])
-            rotation = target_orientation - self.outer_instance.robot.orientation_rad
-            rotation = normalize_angle(rotation)  # normalize to [-pi, pi]
-            
-            # Proportional control for angular velocity
-            result.angular_rad_s_2 = rotation - self.outer_instance.robot.rotation_rad_s            
-            if abs(result.angular_rad_s_2) > self.outer_instance.max_angular_acceleration_m_s_2:
-                result.angular_rad_s_2 = math.copysign(
-                    self.outer_instance.max_angular_acceleration_m_s_2,
-                    result.angular_rad_s_2)
-            
-            self.outer_instance.robot.steering = result
-            
-            return result
         
     class PathFollowing( Seek ):
         def __init__( self,

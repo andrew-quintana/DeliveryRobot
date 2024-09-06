@@ -52,7 +52,10 @@ class OnlineSLAM( Component ):
         # environment information
         self.map = {"ROBOT": np.array([0., 0., 0.])}        # tracks all states
         self.landmarks = {"ROBOT": 0}                       # tracks indices in array
+        
+        # world frame map information
         self.world_frame_idx = -1
+        self.world_frame_map = {"ROBOT": np.array([0., 0., 0.])}
 
     def get_map( self ):
         """
@@ -60,7 +63,7 @@ class OnlineSLAM( Component ):
             dict(str, ndarray): map of all of the states in the environment
         """
 
-        return self.map
+        return self.world_frame_map
     
     def set_world_frame( self, world_frame_idx: int ):
         """
@@ -92,6 +95,7 @@ class OnlineSLAM( Component ):
 
                 # add to tracked map and landmarks list
                 self.map[key] = measurements[key]
+                self.world_frame_map[key] = np.zeros_like(self.map[key], dtype=np.float64)
 
                 # append rows and columns to Omega
                 self.Omega = insert_rows_cols(self.Omega, self.Omega.shape[0], self.Omega.shape[1], self.dim, self.dim)
@@ -184,22 +188,26 @@ class OnlineSLAM( Component ):
         if self.world_frame_idx != -1:
 
             # get the world frame state
-            self.world_frame_state = self.mu[0,
-                                             self.world_frame_idx * self.dim : 
-                                             self.world_frame_idx * self.dim + 2]
+            self.world_frame_state = self.mu[self.world_frame_idx * self.dim : 
+                                             self.world_frame_idx * self.dim + 3]
 
             # get an array to offset the current map
+            print(self.mu)
+            print(self.world_frame_state)
             repetitions = self.mu.shape[0] // self.world_frame_state.shape[0]
             self.world_frame_offset = np.tile(self.world_frame_state, (repetitions, 1))
 
             # update mu based on world frame state
-            self.mu -= self.world_frame_offset
+            world_frame_mu = self.mu - self.world_frame_offset
 
         # map update
         for key in self.landmarks:
             idx = self.landmarks[key]
             for i in range(self.dim):
                 self.map[key][i] = self.mu[idx + i, 0]
+                if self.world_frame_idx != -1: self.world_frame_map[key][i] = world_frame_mu[idx + i, 0]
+                
+        
 
         if self.debug: print("map\n", self.map)
 

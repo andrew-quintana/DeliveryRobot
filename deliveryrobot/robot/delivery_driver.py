@@ -6,29 +6,19 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-Setup the Jetbot and prepare movement functionality.
+[Usage Description]
 
 Classes:
-    DeliveryRobot: all functionality for the jetbot for this project's utility.
-        take_picture(): take an image and return its location
-        stop(): stop the robot's movement
-        step_forward(): step forward a specific amount of time
-        step_backward(): step backward a specific amount of time
-        step_left(): step left a specific amount of time
-        step_right(): step right a specific amount of time
-        slam_update_ai(): supports updating state information for acceleration vector
-            calculating algorithms
-        update_path_ai(): updates path for path following movement
-        path_follow_ai(): path following movement execution
-        arrive_ai(): arrival movement execution
-        align_ai(): align movement execution
+[Class descriptions]
+
+Functions:
+[Provide a list of functions in the module/package with a brief description of each]
+
+Attributes:
+[Provide a list of attributes in the module/package with a brief description of each]
 
 Dependencies:
-    movementai.py
-    utilities.py
-    jetbot
-        Robot.py
-        Camera.py
+[Provide a list of external dependencies required by the module/package]
 
 License:
 [Include the full text of the license you have chosen for your code]
