@@ -63,7 +63,7 @@ class OnlineSLAM( Component ):
             dict(str, ndarray): map of all of the states in the environment
         """
 
-        return self.world_frame_map
+        return self.map if self.world_frame_idx == -1 else self.world_frame_map 
     
     def set_world_frame( self, world_frame_idx: int ):
         """
@@ -72,7 +72,8 @@ class OnlineSLAM( Component ):
             world_frame (int): index of the world frame for mapping wrt a specific landmark
         """
 
-        self.world_frame_idx = world_frame_idx
+        self.world_frame_idx = world_frame_idx + 1
+        print(f"World frame set to {self.world_frame_idx}")
     
     def process_measurements( self, measurements ):
         """
@@ -192,13 +193,14 @@ class OnlineSLAM( Component ):
                                              self.world_frame_idx * self.dim + 3]
 
             # get an array to offset the current map
-            print(self.mu)
-            print(self.world_frame_state)
+            print("MU\n",self.mu)
             repetitions = self.mu.shape[0] // self.world_frame_state.shape[0]
             self.world_frame_offset = np.tile(self.world_frame_state, (repetitions, 1))
+            print(f"CONVERTED WORLD FRAME MEASUREMENT {self.world_frame_state} TO {self.world_frame_offset}")
 
             # update mu based on world frame state
             world_frame_mu = self.mu - self.world_frame_offset
+            print("WORLD FRAME MU\n",world_frame_mu)
 
         # map update
         for key in self.landmarks:
@@ -206,8 +208,6 @@ class OnlineSLAM( Component ):
             for i in range(self.dim):
                 self.map[key][i] = self.mu[idx + i, 0]
                 if self.world_frame_idx != -1: self.world_frame_map[key][i] = world_frame_mu[idx + i, 0]
-                
-        
 
         if self.debug: print("map\n", self.map)
 
