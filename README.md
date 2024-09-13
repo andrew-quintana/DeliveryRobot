@@ -1,7 +1,7 @@
 # DeliveryRobot
-## Current State as of 07/22/2024
-I have tested basic serial integration, which involves the following steps: picture taken, pose estimation, SLAM estimation, Astar path planning, automated acceleration vector generation to follow the path then arrive at the goal goal.<br>
-[![Watch the video](https://img.youtube.com/vi/7LRzWPnWU2A/hqdefault.jpg)](https://youtu.be/7LRzWPnWU2A)
+## Current State as of 09/13/2024
+I am testing the integration of my finite state machine. I have some bugs in the integration of SLAM and the dead reckoning of the acceleration vector generator, `movement.py`. At the moment it appears to have to do with my implementation of using an Apriltag (SLAM landmark) as the world frame.
+https://rainbow-canopy-94e.notion.site/FSM-Integration-697f25c21ac446ef96b8624a91028f0a?pvs=4
 
 ## Summary
 This self-parking robot project is a blend of academic expertise and genuine enthusiasm, focusing on implementing AI and algorithmic methods in a practical setting. The main goal of the project is to equip a robot with the capability to autonomously navigate and locate parking spots within a room, despite initially having limited understanding of its pose, movement, and surroundings.
