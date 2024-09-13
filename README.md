@@ -1,6 +1,6 @@
 # DeliveryRobot
 ## Current State as of 09/13/2024
-I am testing the integration of my finite state machine. I have some bugs in the integration of SLAM and the dead reckoning of the acceleration vector generator, `movement.py`. At the moment it appears to have to do with my implementation of using an Apriltag (SLAM landmark) as the world frame.
+I am testing the integration of my finite state machine. I have some bugs in the integration of SLAM and the dead reckoning of the acceleration vector generator, `movement.py`. At the moment it appears to have to do with my implementation of using an Apriltag (SLAM landmark) as the world frame. Here is a link to my FSM troubleshooting thread:<br>
 https://rainbow-canopy-94e.notion.site/FSM-Integration-697f25c21ac446ef96b8624a91028f0a?pvs=4
 
 ## Summary
