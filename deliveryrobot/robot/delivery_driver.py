@@ -62,7 +62,7 @@ class DeliveryRobot:
             linear_m_s=np.array([0, 0], dtype=np.float64),
             rotation_rad_s=0.0,
             max_speed_m_s=0.015,
-            max_turn_rad_s=0.1
+            max_turn_rad_s=0.2
         )
         self.target_ai = Kinematic(
             state=np.array([0, 0, 0], dtype=np.float64),
@@ -128,7 +128,7 @@ class DeliveryRobot:
             print("PATH COMPLETE, ARRIVING")
             return [0, delta_x, delta_y, delta_theta]
         else:
-            print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
+            if False: print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
         
         # get and update drive parameters
         v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
@@ -150,7 +150,7 @@ class DeliveryRobot:
             print("ARRIVED")
             return [0, delta_x, delta_y, delta_theta]
         else:
-            print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
+            if False: print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
         
         # get and update drive parameters
         v_left, v_right = self.robot_ai.get_drive_params(steering, dt)
@@ -172,7 +172,7 @@ class DeliveryRobot:
             print("ALIGNED")
             return [0, delta_x, delta_y, delta_theta]
         else:
-            print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
+            if False: print(time.time(),"steering", steering.linear_m_s_2, steering.angular_rad_s_2)
 
         # determine driving parameters
         v_left, v_right = self.robot_ai.get_drive_params(steering, dt)

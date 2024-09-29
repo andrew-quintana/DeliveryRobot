@@ -6,30 +6,19 @@ Version: 0.1.0
 License: [License Name]
 
 Usage:
-Path planning based on Astar and Beam Search algorithms.
+[Usage Description]
 
 Classes:
-    Graph: local graph datatype
-        add_vertex(): add vertex to graph
-        add_edge(): add edge to graph
-        get_vertex_properties(): get information about vertex
-        clear(): clear graph
-    Astar: contains algorithms for beam search and astar
-        reset(): reset/delete relevant inputs and outputs for algorithm
-        add_vertex(): execute vertex addition
-        plot_map(): show the map based on updated mapper
-        astar_move(): determine path based on current information
-        beam_search(): investigate opportunities for movement based on beam or
-            whisker methodology
-            - actual astar implementation WITH beam search incorporated
+[Class descriptions]
 
 Functions:
-    hueristic(): calculate value to determine risk weight
+[Provide a list of functions in the module/package with a brief description of each]
+
+Attributes:
+[Provide a list of attributes in the module/package with a brief description of each]
 
 Dependencies:
-    utilities.py
-    computational_geomtry.py
-    mapper.py
+[Provide a list of external dependencies required by the module/package]
 
 License:
 [Include the full text of the license you have chosen for your code]
@@ -337,6 +326,8 @@ class Astar( Component ):
                     
                     action_vertex = self.graph.vertex_index_map[self.action.path[1][0]]
                     self.action.distance_m = euclidian(action_vertex.state, self.robot_state)
+                    print(self.robot_state)
+                    print(action_vertex.state)
                     self.action.steering_rad = relative_angle(self.robot_state, action_vertex.state)
                     self.action.next = INFO.NA
                     

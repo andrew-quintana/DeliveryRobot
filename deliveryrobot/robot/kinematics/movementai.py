@@ -351,7 +351,10 @@ class MovementAI( Component ):
                 result.angular_rad_s_2 = math.copysign(
                     self.outer_instance.max_angular_acceleration_m_s_2,
                     result.angular_rad_s_2)
-
+            
+            # apply PID to result
+            
+            
             self.outer_instance.robot.steering = result
 
             return [result, delta_x, delta_y, delta_theta]
@@ -463,8 +466,9 @@ class MovementAI( Component ):
             distance_to_target_m = abs(next_state[:2] - self.outer_instance.robot.position)
             if np.linalg.norm(distance_to_target_m) < self.path_point_radius_m:
                 self.outer_instance.path.next_idx += 1
-                
+            
             # check if the next path node is the final one, report completion
+            print("IDX No", self.outer_instance.path.next_idx, "STATES LEN", len(self.outer_instance.path.states))
             if self.outer_instance.path.next_idx == len(self.outer_instance.path.states) - 1:
                 # do not set next path point to avoid combining A* and MovementAI goal tolerances
                 return [None, delta_x, delta_y, delta_theta]
@@ -475,5 +479,4 @@ class MovementAI( Component ):
 
             # delegate to seek
             output = super().get_steering(delta_x, delta_y, delta_theta)
-            print(output)
             return output

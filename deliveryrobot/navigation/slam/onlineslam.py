@@ -27,6 +27,8 @@ Examples:
 """
 
 from utilities.utilities import *
+from utilities.computational_geometry import *
+from navigation.filters.kalman_filter import *
 
 import cv2
 import numpy as np
@@ -35,7 +37,7 @@ import math
 
 class OnlineSLAM( Component ):
 
-    def __init__( self, dim ):
+    def __init__( self, dim, meas_weight=1., move_weight=1. ):
         """
         Constructor of the online slam instance
         """
@@ -48,7 +50,14 @@ class OnlineSLAM( Component ):
 
         # dimension
         self.dim = dim
-
+        
+        # weights
+        self.psi_factor = 2.0
+        self.meas_weight = meas_weight
+        self.move_weight = move_weight
+        self.meas_weight_psi = meas_weight #* self.psi_factor  # Higher weight for Psi measurements
+        self.move_weight_psi = move_weight #* 1/self.psi_factor  # Lower weight for Psi motion
+        
         # environment information
         self.map = {"ROBOT": np.array([0., 0., 0.])}        # tracks all states
         self.landmarks = {"ROBOT": 0}                       # tracks indices in array
@@ -74,6 +83,19 @@ class OnlineSLAM( Component ):
 
         self.world_frame_idx = world_frame_idx + 1
         print(f"World frame set to {self.world_frame_idx}")
+        
+    def initialize_filters( self, estimate_dict ):
+        
+        # initialize psi kalman filter
+        self.psi_kf = KalmanFilter(process_var=0.001, measurement_var=0.01, initial_estimate=estimate_dict["psi"])
+
+        
+    def update_weights( self, meas_weight: float=1., move_weight: float=1. ):
+        
+        self.meas_weight = meas_weight
+        self.move_weight = move_weight
+        self.meas_weight_psi = meas_weight #* self.psi_factor  # Higher weight for Psi measurements
+        self.move_weight_psi = move_weight #* 1/self.psi_factor  # Lower weight for Psi motion
     
     def process_measurements( self, measurements ):
         """
@@ -107,12 +129,21 @@ class OnlineSLAM( Component ):
             # credit given to OMSCS 7638 staff
             idx = self.landmarks[key]
             for i in range(self.dim):
-                self.Omega[i,i] += 1
-                self.Omega[idx + i, idx + i] += 1
-                self.Omega[idx + i, i] += -1
-                self.Omega[i, idx + i] += -1
-                self.Xi[i, 0] += -measurements[key][i]
-                self.Xi[idx + i, 0] += measurements[key][i]
+                if i == 2:  # Psi (orientation)
+                    self.Omega[i, i] += self.meas_weight_psi  # Apply higher weight for Psi measurements
+                    self.Omega[idx + i, idx + i] += self.meas_weight_psi
+                    self.Omega[idx + i, i] += -self.meas_weight_psi
+                    self.Omega[i, idx + i] += -self.meas_weight_psi
+                    self.Xi[i, 0] += -measurements[key][i] * self.meas_weight_psi
+                    self.Xi[idx + i, 0] += measurements[key][i] * self.meas_weight_psi
+                else:
+                    # X and Y measurements
+                    self.Omega[i, i] += self.meas_weight
+                    self.Omega[idx + i, idx + i] += self.meas_weight
+                    self.Omega[idx + i, i] += -self.meas_weight
+                    self.Omega[i, idx + i] += -self.meas_weight
+                    self.Xi[i, 0] += -measurements[key][i]
+                    self.Xi[idx + i, 0] += measurements[key][i]
 
             if self.debug: print("Omega\n", self.Omega)
             if self.debug: print("Xi\n", self.Xi)
@@ -120,7 +151,7 @@ class OnlineSLAM( Component ):
         return True
 
 
-    def process_movement( self, translation_m, rotation_rad ):
+    def process_movement( self, translation_m, rotation_rad, meas=True ):
         """
         process movement commanded
 
@@ -130,12 +161,16 @@ class OnlineSLAM( Component ):
         """
 
         if self.debug: print("MOVEMENT PROCESSING")
+            
+        #if not meas: self.update_weights(move_weight=self.move_weight * 1.1)
 
         # determine theoretical new position
+        if self.debug: print(f"PSI ESTIMATE CALCULATION:\n{self.map['ROBOT'][2]} + {rotation_rad} = {self.map['ROBOT'][2] + rotation_rad}")
         new_robot_bearing_rad = self.map["ROBOT"][2] + rotation_rad
         new_robot_delta_x_m = translation_m * np.cos(new_robot_bearing_rad)
         new_robot_delta_y_m = translation_m * np.sin(new_robot_bearing_rad)
-        estimate = np.array([new_robot_delta_x_m, new_robot_delta_y_m, new_robot_bearing_rad])
+        estimate = np.array([new_robot_delta_x_m, new_robot_delta_y_m, rotation_rad])
+        if self.debug: print("ESTIMATE DELTAS\n", new_robot_delta_x_m, new_robot_delta_y_m, new_robot_bearing_rad)
 
         # expand information and vector matrices by one new position
         self.Omega = insert_rows_cols(self.Omega, self.dim, self.dim, self.dim, self.dim)
@@ -146,10 +181,17 @@ class OnlineSLAM( Component ):
             self.Omega[i, i] += 1
 
         for i in range(self.dim):
-            self.Omega[self.dim + i, i] += -1
-            self.Omega[i, self.dim + i] += -1
+            if i == 2:  # Psi (orientation) index
+                # Give less weight to the motion model for Psi
+                self.Omega[self.dim + i, i] += -self.move_weight_psi
+                self.Omega[i, self.dim + i] += -self.move_weight_psi
+            else:
+                # Keep the same weight for X and Y movement
+                self.Omega[self.dim + i, i] += -self.move_weight
+                self.Omega[i, self.dim + i] += -self.move_weight
             self.Xi[i, 0] += -estimate[i]
             self.Xi[self.dim + i, 0] += estimate[i]
+
 
         if self.debug: print("Omega\n", self.Omega)
         if self.debug: print("Xi\n", self.Xi)
@@ -191,24 +233,31 @@ class OnlineSLAM( Component ):
             # get the world frame state
             self.world_frame_state = self.mu[self.world_frame_idx * self.dim : 
                                              self.world_frame_idx * self.dim + 3]
+            if self.debug: print("WORLD FRAME STATE:\n",self.world_frame_state)
 
             # get an array to offset the current map
-            print("MU\n",self.mu)
             repetitions = self.mu.shape[0] // self.world_frame_state.shape[0]
             self.world_frame_offset = np.tile(self.world_frame_state, (repetitions, 1))
-            print(f"CONVERTED WORLD FRAME MEASUREMENT {self.world_frame_state} TO {self.world_frame_offset}")
 
             # update mu based on world frame state
             world_frame_mu = self.mu - self.world_frame_offset
-            print("WORLD FRAME MU\n",world_frame_mu)
+            if self.debug: print("WORLD FRAME MU\n",world_frame_mu)
 
         # map update
         for key in self.landmarks:
             idx = self.landmarks[key]
-            for i in range(self.dim):
-                self.map[key][i] = self.mu[idx + i, 0]
-                if self.world_frame_idx != -1: self.world_frame_map[key][i] = world_frame_mu[idx + i, 0]
+            self.map[key][0:2] = self.mu[idx:idx+2, 0]
+            angle_norm = normalize_angle(self.map[key][2])
+            self.map[key][2] = self.psi_kf.update(angle_norm)
+            if self.world_frame_idx != -1:
+                self.world_frame_map[key][0:3] = world_frame_mu[idx:idx+3, 0]
+                self.world_frame_map[key][2] = normalize_angle(self.world_frame_map[key][2])
+                self.map[key][2] = self.world_frame_map[key][2]
 
         if self.debug: print("map\n", self.map)
+        if self.debug: print("world frame map\n",self.world_frame_map)
+            
+        # reset weights to 1. each
+        self.update_weights()
 
         return True

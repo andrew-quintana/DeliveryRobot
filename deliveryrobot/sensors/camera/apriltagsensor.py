@@ -29,6 +29,7 @@ Examples:
 """
 
 from utilities.utilities import *
+from utilities.computational_geometry import *
 from sensors.calibration.camera_calibration import calibrate_fisheye_checkerboard
 
 import cv2
@@ -108,10 +109,7 @@ class AprilTagSensor( Component ):
 
             # Extract the position and orientation of the tag
             position = pose[:3,-1:]
-            rotation_matrix = pose[:3, :3]
-
-            r_vec, _ = cv2.Rodrigues(rotation_matrix)
-            r_state = [r_vec[2,0], r_vec[1,0], r_vec[0,0]]
+            R = pose[:3, :3]
 
             if self.verbose: print("APRILTAG ID:", detection.tag_id)
 
@@ -123,23 +121,25 @@ class AprilTagSensor( Component ):
             
             # Convert to x, y, psi of jetbot
             x = position[2,0] * 10
-            y = position[0,0] * -10 - .094
+            y = position[0,0] * 10 + .094
             #psi = r_state[psi_idx] * 1
             
-            M = pose
-            x1 = M[1, 3]  # X is stored in the second row, last column (forward)
-            y1 = M[0, 3]  # Y is stored in the first row, last column (right)
-            z1 = M[2, 3]  # Z is stored in the third row, last column (up)
-            R = M[:3, :3]
-            
             # Roll (φ): Rotation around the X-axis (old Y-axis)
-            roll = np.arctan2(-R[2, 1], R[2, 2])
+            yaw = np.arctan2(-R[2, 1], R[2, 2])
 
             # Pitch (θ): Rotation around the (inverted) Y-axis
             pitch = np.arctan2(R[0, 0], -R[1, 0])
 
             # Yaw (ψ): Rotation around Z-axis
             yaw = np.arctan2(R[2, 0], np.sqrt(R[2, 1]**2 + R[2, 2]**2))
+            
+            # Yaw logarithmic offset
+            a = -0.1889984804696413
+            b = -0.2705714669809751
+            if yaw > 0.1:
+                yaw += a * np.log(x) + b
+            else:
+                yaw -= a * np.log(x) + b
             
             # Assign calculated and measured values
             measurements[str(detection.tag_id)] = [x, y, yaw]
